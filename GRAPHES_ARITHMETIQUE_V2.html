@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Laboratoire de Collatz</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path d=%22M50 50 Q90 10 50 10 T50 90 T10 50%22 stroke=%22%2300d2ff%22 stroke-width=%223%22 fill=%22none%22/></svg>">
+
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #080a10;
+            --panel-bg: rgba(20, 25, 35, 0.95);
+            --text-color: #e6edf3;
+            --accent-color: #00d2ff; /* Cyan */
+            --branch-div-color: #00ff9d; /* Vert Néon (Division) */
+            --branch-mult-color: #ff0055; /* Rose Néon (Multiplication) */
+            --modal-overlay: rgba(0,0,0,0.9);
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* En-tête mathématique */
+        header {
+            position: absolute;
+            top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 10; text-align: center;
+            background: rgba(10, 15, 20, 0.85);
+            padding: 10px 40px; border-radius: 50px;
+            border: 1px solid #333; backdrop-filter: blur(8px);
+            pointer-events: none;
+        }
+        .latex-wrapper { font-size: 1.2em; color: var(--text-color); }
+
+        #canvas-wrapper { flex: 1; position: relative; cursor: move; }
+        canvas { display: block; }
+
+        /* Panneau Latéral */
+        .controls {
+            position: absolute; top: 20px; left: 20px; width: 320px;
+            background-color: var(--panel-bg); padding: 20px;
+            border-radius: 12px; box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            border: 1px solid #333; z-index: 20;
+            max-height: 90vh; overflow-y: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        h2 { font-size: 0.9em; text-transform: uppercase; color: #888; border-bottom: 1px solid #444; padding-bottom: 5px; margin-top: 20px; letter-spacing: 1px;}
+        h2:first-child { margin-top: 0; }
+
+        .control-group { margin-bottom: 12px; }
+        label { display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 4px; color: #ccc; }
+        span.val { color: var(--accent-color); font-family: monospace; }
+        
+        /* Inputs numériques (petits) */
+        input[type="number"] {
+            background: #111; border: 1px solid #444; color: var(--accent-color);
+            padding: 4px; border-radius: 4px; width: 50px; font-family: monospace; text-align: right;
+        }
+        input[type="range"] { width: 100%; accent-color: var(--accent-color); cursor: pointer; height: 4px; }
+
+        /* Toggle Switch */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; cursor: pointer;}
+        .toggle-switch {
+            position: relative; width: 36px; height: 18px; background: #333;
+            border-radius: 18px; transition: 0.3s;
+        }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+            background: #fff; border-radius: 50%; transition: 0.3s;
+        }
+        input[type="checkbox"] { display: none; }
+        input[type="checkbox"]:checked + .toggle-switch { background: var(--accent-color); }
+        input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(18px); }
+
+        .btn {
+            background: #222; color: white; border: 1px solid #444;
+            padding: 10px; width: 100%; border-radius: 6px; cursor: pointer;
+            margin-top: 10px; transition: 0.2s; font-size: 0.9em; font-weight: bold;
+        }
+        .btn:hover { background: #333; border-color: var(--accent-color); }
+        .btn-explain { border-color: #666; background: rgba(255,255,255,0.05); }
+
+        .presets { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        .preset-btn { flex: 1; padding: 5px; font-size: 0.8em; background: #151515; border: 1px solid #333; color: #aaa; cursor: pointer; border-radius: 4px;}
+        .preset-btn:hover { color: #fff; border-color: var(--accent-color); }
+
+        /* Tooltip & Modal */
+        #tooltip {
+            position: absolute; pointer-events: none; background: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--accent-color); padding: 5px 10px; border-radius: 4px;
+            display: none; z-index: 30; font-family: monospace; box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--modal-overlay); z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: #1a1a1a; padding: 30px; border-radius: 12px;
+            max-width: 550px; width: 90%; max-height: 85vh; overflow-y: auto;
+            position: relative; border: 1px solid #444;
+        }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #888; }
+        .modal-body p { line-height: 1.6; color: #ccc; }
+        .modal-body h3 { color: var(--accent-color); margin-top: 20px; }
+        
+        .hl-green { color: var(--branch-div-color); font-weight: bold; }
+        .hl-pink { color: var(--branch-mult-color); font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div id="latexFormula" class="latex-wrapper">
+            \[ f(x) = \dots \]
+        </div>
+    </header>
+
+    <div class="controls">
+	<div><button class="btn btn-explain" id="explainBtn">Comprendre le graphe</button></div>
+	<p></p>      
+        <div class="presets">
+            <button class="preset-btn" onclick="applyPreset(3,1,0,2)">3x+1</button>
+            <button class="preset-btn" onclick="applyPreset(5,1,0,2)">5x+1</button>
+            <button class="preset-btn" onclick="applyPreset(1,1,0,2)">x+1</button>
+        </div>
+
+        <h2>Arithmétique (f)</h2>
+        <div class="control-group">
+            <label>Multiplicateur (a) <input type="number" id="inputA" value="3"></label>
+        </div>
+        <div class="control-group">
+            <label>Ajout (b) <input type="number" id="inputB" value="1"></label>
+        </div>
+        <div class="control-group">
+            <label>Diviseur (d) <input type="number" id="inputD" value="2"></label>
+        </div>
+        <div class="control-group">
+            <label>Résidu (v) <input type="number" id="inputV" value="0"></label>
+            <small style="color:#666; font-size:0.8em;">Condition: \( x \equiv v \pmod d \)</small>
+        </div>
+
+        <h2>Géométrie Organique</h2>
+        
+        <label class="toggle-row">
+            <span>Activer Ondulations</span>
+            <input type="checkbox" id="trigoToggle" checked>
+            <div class="toggle-switch"></div>
+        </label>
+
+        <div class="control-group">
+            <label>Amplitude (Sinuosité) <span id="ampVal" class="val">0.3</span></label>
+            <input type="range" id="ampInput" min="0" max="1.5" step="0.05" value="0.3">
+        </div>
+        <div class="control-group">
+            <label>Fréquence (Complexité) <span id="freqVal" class="val">0.4</span></label>
+            <input type="range" id="freqInput" min="0.1" max="2.0" step="0.1" value="0.4">
+        </div>
+
+        <h2>Structure</h2>
+        <div class="control-group">
+            <label>Profondeur <span id="depthVal" class="val">13</span></label>
+            <input type="range" id="depthInput" min="5" max="18" value="13">
+        </div>
+        <div class="control-group">
+            <label>Angle Base <span id="angleVal" class="val">20°</span></label>
+            <input type="range" id="angleInput" min="5" max="90" value="20">
+        </div>
+
+        <button class="btn" id="resetCamBtn">Recentrer la vue</button>
+        
+    </div>
+
+    <div id="explanationModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="modal-body">
+                <h2 style="border-bottom: 1px solid #444; padding-bottom:10px;">Le Bio-Laboratoire</h2>
+                
+                <p>Ce graphe inverse permet de visualiser la complexité de toute suite de Collatz généralisée, avec une esthétique organique.</p>
+                
+                <h3>La Formule</h3>
+                <p>Vous définissez la fonction de descente \( f(x) \) :</p>
+                <ul>
+                    <li>Si \( x \equiv v \pmod d \) (congruence), on divise : \( x \to x/d \).</li>
+                    <li>Sinon, on transforme : \( x \to ax + b \).</li>
+                </ul>
+                <p><em>Note : Pour le Collatz classique, v=0 (on divise les nombres pairs). Si v≠0, l'arbre peut être radicalement différent (ou vide !).</em></p>
+
+                <h3>Les Branches</h3>
+                <ul>
+                    <li><span class="hl-green">Vertes (Division inversée)</span> : On remonte via \( n \times d \). Cette branche n'existe que si \( n \times d \equiv v \pmod d \).</li>
+                    <li><span class="hl-pink">Roses (Transformation inversée)</span> : On remonte via \( (n-b)/a \).</li>
+                </ul>
+
+                <h3>Les Ondulations</h3>
+                <p>Les fonctions circulaires (Sinus) perturbent l'angle des branches selon la profondeur, donnant l'impression que le graphe flotte dans un courant marin.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-wrapper">
+        <canvas id="treeCanvas"></canvas>
+    </div>
+    <div id="tooltip"></div>
+
+    <script>
+        const canvas = document.getElementById('treeCanvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+        const latexContainer = document.getElementById('latexFormula');
+
+        // Inputs Maths
+        const inputA = document.getElementById('inputA');
+        const inputB = document.getElementById('inputB');
+        const inputD = document.getElementById('inputD');
+        const inputV = document.getElementById('inputV');
+        
+        // Inputs Visuels
+        const depthInput = document.getElementById('depthInput');
+        const angleInput = document.getElementById('angleInput');
+        const ampInput = document.getElementById('ampInput');
+        const freqInput = document.getElementById('freqInput');
+        const trigoToggle = document.getElementById('trigoToggle');
+
+        // Modal
+        const explainBtn = document.getElementById('explainBtn');
+        const modal = document.getElementById('explanationModal');
+        const closeBtn = document.querySelector('.close-btn');
+
+        // Paramètres Système
+        let pA = 3, pB = 1, pD = 2, pV = 0;
+        let maxDepth = 13;
+        let baseAngle = 20 * Math.PI / 180;
+        let baseLen = 35;
+        let useTrigo = true;
+        let sinAmp = 0.3;
+        let sinFreq = 0.4;
+
+        // Viewport
+        let offsetX = window.innerWidth / 2;
+        let offsetY = window.innerHeight - 50;
+        let scale = 1;
+        let isDragging = false;
+        let lastX, lastY;
+        let nodes = [];
+        let hoveredNode = null;
+
+        // --- CŒUR LOGIQUE ---
+        function generateTree() {
+            nodes = [];
+            let root = { val: 1, x: 0, y: 0, angle: -Math.PI/2, depth: 0, parent: null };
+            nodes.push(root);
+            
+            let queue = [root];
+            let seen = new Set([1]);
+
+            while(queue.length > 0) {
+                let curr = queue.shift();
+                if(curr.depth >= maxDepth) continue;
+
+                let n = curr.val;
+                let nextD = curr.depth + 1;
+                let len = baseLen * Math.pow(0.92, curr.depth);
+
+                // Calcul de la perturbation trigonométrique (Ondulation)
+                let wave = 0;
+                if (useTrigo) {
+                    // sin(depth * freq) crée des vagues le long des générations
+                    wave = Math.sin(curr.depth * sinFreq) * sinAmp;
+                }
+
+                // --- BRANCHE 1 : INVERSE DIVISION (x -> x/d) ---
+                // On cherche x tel que x/d = n => x = n * d
+                // Condition Forward : ce x doit satisfaire x ≡ v [d]
+                // Donc (n * d) ≡ v [d]
+                // Comme n*d est un multiple de d, (n*d)%d est toujours 0.
+                // Donc cette branche n'existe QUE si v ≡ 0 [d]. (généralement v=0)
+                
+                // Note : on vérifie (n*pD) % pD === pV % pD
+                // Ce qui se simplifie en 0 === pV % pD.
+                if ( (n * pD) % pD === (pV % pD + pD) % pD ) { 
+                    let val1 = n * pD;
+                    if(!seen.has(val1)) {
+                        seen.add(val1);
+                        
+                        // Angle : base + wave + léger bruit
+                        let ang1 = curr.angle - (baseAngle + wave) * 0.7;
+                        ang1 += (Math.random() - 0.5) * 0.05;
+
+                        let node1 = {
+                            val: val1,
+                            x: curr.x + Math.cos(ang1) * len,
+                            y: curr.y + Math.sin(ang1) * len,
+                            angle: ang1, depth: nextD, parent: curr,
+                            type: 'div'
+                        };
+                        nodes.push(node1);
+                        queue.push(node1);
+                    }
+                }
+
+                // --- BRANCHE 2 : INVERSE TRANSFORMATION (x -> ax+b) ---
+                // On cherche x tel que ax+b = n => x = (n-b)/a
+                // Conditions :
+                // 1. Division entière possible
+                // 2. Condition Forward : ce x ne doit PAS satisfaire x ≡ v [d]
+                // 3. Boucle : x > 1
+                
+                if ( (n - pB) % pA === 0 ) {
+                    let cand = (n - pB) / pA;
+                    
+                    // Vérification de la contrainte modulo v
+                    // Forward logic: si cand ≡ v [d], on aurait dû diviser par d.
+                    // Donc pour être ici, il faut que cand ≢ v [d].
+                    let candMod = (cand % pD + pD) % pD; // Modulo positif propre
+                    let vMod = (pV % pD + pD) % pD;
+
+                    if (candMod !== vMod && cand > 1 && !seen.has(cand)) {
+                        seen.add(cand);
+
+                        // Cette branche part de l'autre côté
+                        let ang2 = curr.angle + (baseAngle + wave) * 1.5;
+                        
+                        let node2 = {
+                            val: cand,
+                            x: curr.x + Math.cos(ang2) * len,
+                            y: curr.y + Math.sin(ang2) * len,
+                            angle: ang2, depth: nextD, parent: curr,
+                            type: 'mult'
+                        };
+                        nodes.push(node2);
+                        queue.push(node2);
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.canvas.width = window.innerWidth;
+            ctx.canvas.height = window.innerHeight;
+            
+            // Fond dégradé radial profond
+            let grad = ctx.createRadialGradient(canvas.width/2, canvas.height, 0, canvas.width/2, canvas.height/2, canvas.height);
+            grad.addColorStop(0, '#101520');
+            grad.addColorStop(1, '#050505');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+
+            // Dessin des arêtes
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            nodes.forEach(node => {
+                if(node.parent) {
+                    ctx.beginPath();
+                    ctx.moveTo(node.parent.x, node.parent.y);
+                    // On pourrait utiliser bezierCurveTo pour plus d'organique
+                    ctx.lineTo(node.x, node.y);
+                    
+                    if(node.type === 'mult') {
+                        // Branche "Complexe" : Rose
+                        ctx.strokeStyle = '#ff0055';
+                        ctx.lineWidth = 2.5 / Math.pow(scale, 0.2);
+                        ctx.shadowBlur = 5; ctx.shadowColor = '#ff0055';
+                    } else {
+                        // Branche "Simple" : Vert/Cyan
+                        ctx.strokeStyle = '#00ff9d';
+                        ctx.lineWidth = 1.5 / Math.pow(scale, 0.2);
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // Dessin des nœuds
+            nodes.forEach(node => {
+                if(scale < 0.6 && node.depth > 6 && node !== hoveredNode) return; // Optimisation
+
+                ctx.beginPath();
+                let r = Math.max(2, 5 - node.depth * 0.2) / Math.pow(scale, 0.5);
+                
+                if(hoveredNode && isOnPath(node, hoveredNode)) {
+                    ctx.fillStyle = '#fff';
+                    ctx.shadowBlur = 15; ctx.shadowColor = '#fff';
+                    if(node === hoveredNode) r *= 2;
+                } else {
+                    ctx.fillStyle = (node.type === 'mult') ? '#ff0055' : '#00ff9d';
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        function isOnPath(node, target) {
+            let curr = target;
+            while(curr) {
+                if(curr === node) return true;
+                curr = curr.parent;
+            }
+            return false;
+        }
+
+        // --- UPDATE ---
+
+        function updateFormulaLatex() {
+            let sign = pB >= 0 ? '+' : '';
+            let latex = `
+                f(x) = \\begin{cases} 
+                x/${pD} & \\text{si } x \\equiv ${pV} \\pmod{${pD}} \\\\ 
+                ${pA}x ${sign} ${pB} & \\text{sinon} 
+                \\end{cases}
+            `;
+            latexContainer.innerHTML = `\\[ ${latex} \\]`;
+            if(window.MathJax) MathJax.typesetPromise([latexContainer]);
+        }
+
+        function updateParams() {
+            pA = parseInt(inputA.value) || 1;
+            pB = parseInt(inputB.value) || 0;
+            pD = parseInt(inputD.value) || 2;
+            pV = parseInt(inputV.value) || 0;
+            
+            if(pD < 2) pD = 2;
+
+            // Paramètres visuels
+            maxDepth = parseInt(depthInput.value);
+            baseAngle = parseInt(angleInput.value) * Math.PI / 180;
+            useTrigo = trigoToggle.checked;
+            sinAmp = parseFloat(ampInput.value);
+            sinFreq = parseFloat(freqInput.value);
+
+            // Mise à jour labels
+            document.getElementById('ampVal').textContent = sinAmp;
+            document.getElementById('freqVal').textContent = sinFreq;
+            document.getElementById('depthVal').textContent = maxDepth;
+            document.getElementById('angleVal').textContent = angleInput.value + "°";
+
+            generateTree();
+            draw();
+            updateFormulaLatex();
+        }
+
+        window.applyPreset = function(a, b, v, d) {
+            inputA.value = a;
+            inputB.value = b;
+            inputV.value = v;
+            inputD.value = d;
+            updateParams();
+        };
+
+        // Modal Logic
+        explainBtn.onclick = () => modal.style.display = 'flex';
+        closeBtn.onclick = () => modal.style.display = 'none';
+        window.onclick = (e) => { if(e.target === modal) modal.style.display = 'none'; };
+
+        // Listeners
+        [inputA, inputB, inputD, inputV].forEach(el => el.addEventListener('change', updateParams));
+        [depthInput, angleInput, ampInput, freqInput].forEach(el => el.addEventListener('input', updateParams));
+        trigoToggle.addEventListener('change', updateParams);
+
+        // Souris
+        canvas.addEventListener('mousedown', e => { isDragging=true; lastX=e.clientX; lastY=e.clientY; });
+        window.addEventListener('mouseup', () => isDragging=false);
+        window.addEventListener('mousemove', e => {
+            if(isDragging) {
+                offsetX += e.clientX - lastX; offsetY += e.clientY - lastY;
+                lastX = e.clientX; lastY = e.clientY;
+                draw();
+            }
+            let mx = (e.clientX - offsetX) / scale;
+            let my = (e.clientY - offsetY) / scale;
+            let found = null; let minD = 15 / scale;
+            for(let i=nodes.length-1; i>=0; i--) {
+                let n = nodes[i];
+                if(Math.sqrt((n.x-mx)**2 + (n.y-my)**2) < minD) { found = n; break; }
+            }
+            if(found !== hoveredNode) {
+                hoveredNode = found; draw();
+                if(found) {
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (e.clientX+15)+'px'; tooltip.style.top = (e.clientY+15)+'px';
+                    tooltip.textContent = `Val: ${found.val}`;
+                } else tooltip.style.display = 'none';
+            }
+        });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            let f = 1 - e.deltaY * 0.001;
+            let newScale = Math.max(0.1, Math.min(50, scale * f));
+            offsetX -= (e.clientX - offsetX) * (newScale/scale - 1);
+            offsetY -= (e.clientY - offsetY) * (newScale/scale - 1);
+            scale = newScale;
+            draw();
+        }, {passive:false});
+
+        document.getElementById('resetCamBtn').onclick = () => {
+            offsetX = window.innerWidth/2; offsetY = window.innerHeight-50; scale=1; draw();
+        };
+        window.onresize = draw;
+
+        updateParams();
+
+    </script>
+</body>
+</html>
