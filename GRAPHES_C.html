@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphes et Nombres Complexes - Popup Expert</title>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #0f111a;
+            color: #eceff4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        .app-container {
+            display: flex;
+            gap: 25px;
+            background: #1a1c25;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+            flex-wrap: wrap;
+            max-width: 1100px;
+            justify-content: center;
+        }
+        canvas {
+            background: #000000;
+            border-radius: 12px;
+            border: 1px solid #3b4252;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        .sidebar {
+            flex: 1;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            background: #2e3440;
+            padding: 18px;
+            border-radius: 10px;
+            border-left: 5px solid #88c0d0;
+        }
+        .math-box { font-size: 1.25em; color: #88c0d0; margin: 10px 0; min-height: 1.6em; }
+        
+        button {
+            background: #5e81ac;
+            border: none;
+            color: white;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        button:hover { background: #81a1c1; transform: translateY(-2px); }
+
+        /* Styles du Popup (Modal) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #2e3440;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,1);
+            border: 1px solid #4c566a;
+        }
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #bf616a;
+        }
+        .highlight { color: #ebcb8b; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: #88c0d0; margin-bottom: 5px;">Théorie des Graphes & Plan Complexe</h1>
+    <p style="color: #d8dee9; margin-bottom: 25px;">Le lien entre transformation linéaire et structure de réseau.</p>
+
+    <div class="app-container">
+        <canvas id="graphCanvas" width="500" height="500"></canvas>
+
+        <div class="sidebar">
+            <div class="card">
+                <strong>Générateur \( z \)</strong>
+                <div id="alg-display" class="math-box">\( z = a + ib \)</div>
+                <div id="exp-display" class="math-box">\( z = r e^{i\theta} \)</div>
+            </div>
+
+            <div class="card" style="border-left-color: #a3be8c;">
+                <strong>Configuration</strong>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="lock-module" style="width: 18px; height: 18px;"> 
+                    Forcer \( |z| = 1 \) (Stabilité)
+                </label>
+            </div>
+
+            <button id="btn-open-modal">Comprendre le Graphe</button>
+        </div>
+    </div>
+
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" id="btn-close-modal">&times;</span>
+            <h2 style="color: #88c0d0; margin-top:0;">Analyse Théorique</h2>
+            <div id="modal-body">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const scale = 180;
+        const origin = { x: canvas.width / 2, y: canvas.height / 2 };
+        let z = { a: 0.8, b: 0.6 };
+        
+        const lockCheckbox = document.getElementById('lock-module');
+        const modal = document.getElementById('modalOverlay');
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Grille
+            ctx.beginPath();
+            ctx.strokeStyle = '#2e3440';
+            ctx.arc(origin.x, origin.y, scale, 0, Math.PI * 2);
+            ctx.stroke();
+
+            let r = Math.sqrt(z.a*z.a + z.b*z.b);
+            let theta = Math.atan2(z.b, z.a);
+
+            if (lockCheckbox.checked) {
+                r = 1;
+                z.a = Math.cos(theta);
+                z.b = Math.sin(theta);
+            }
+
+            const points = [];
+            for (let n = 0; n <= 30; n++) {
+                const rn = Math.pow(r, n);
+                const tn = theta * n;
+                points.push({
+                    x: origin.x + (rn * Math.cos(tn)) * scale,
+                    y: origin.y - (rn * Math.sin(tn)) * scale
+                });
+            }
+
+            // Graphe
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(136, 192, 208, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.moveTo(points[0].x, points[0].y);
+            for(let i=1; i<points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+            ctx.stroke();
+
+            // Sommets
+            points.forEach((p, i) => {
+                ctx.beginPath();
+                ctx.fillStyle = (i === 1) ? '#bf616a' : (i === 0 ? '#eceff4' : '#88c0d0');
+                ctx.arc(p.x, p.y, i === 1 ? 6 : 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            updateDisplay(r, theta);
+        }
+
+        function updateDisplay(r, theta) {
+            const bSign = z.b >= 0 ? '+' : '-';
+            document.getElementById('alg-display').innerHTML = `\\( z = ${z.a.toFixed(3)} ${bSign} ${Math.abs(z.b).toFixed(3)}i \\)`;
+            document.getElementById('exp-display').innerHTML = `\\( z = ${r.toFixed(3)} e^{i ${theta.toFixed(3)}} \\)`;
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        function fillModalContent() {
+            const r = Math.sqrt(z.a*z.a + z.b*z.b);
+            const thetaDeg = (Math.atan2(z.b, z.a) * 180 / Math.PI).toFixed(1);
+            let verdict = r > 1.01 ? "Divergente" : (r < 0.99 ? "Convergente" : "Stable");
+
+            document.getElementById('modal-body').innerHTML = `
+                <p>Ce graphe visualise la suite géométrique complexe \\( (z^n)_{n \\in \\mathbb{N}} \\).</p>
+                <p>Dans la théorie des réseaux, cela correspond à un <b>graphe de transfert</b> où chaque nœud est une itération :</p>
+                <ul>
+                    <li><b>Forme Algébrique :</b> Position cartésienne \\( (a, b) \\) dans le plan complexe.</li>
+                    <li><b>Forme Exponentielle :</b> Indique que chaque arête est une rotation de <span class="highlight">${thetaDeg}°</span> couplée à une homothétie de rapport <span class="highlight">${r.toFixed(3)}</span>.</li>
+                </ul>
+                <p>Nature actuelle du graphe : <span class="highlight">${verdict}</span>.</p>
+                <center style="font-size:1.4em; padding: 20px 0;">
+                    \\( z^n = r^n e^{in\\theta} \\)
+                </center>
+                <p><i>Note : Si vous fixez le module à 1, vous observez des groupes cycliques. Si l'angle est un sous-multiple de \\( 2\\pi \\), le graphe se referme sur lui-même pour former un polygone régulier.</i></p>
+            `;
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        // Événements
+        function handleInput(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            z.a = (clientX - rect.left - origin.x) / scale;
+            z.b = (origin.y - (clientY - rect.top)) / scale;
+            draw();
+            if (modal.style.display === "flex") fillModalContent();
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            handleInput(e);
+            canvas.addEventListener('mousemove', handleInput);
+        });
+        window.addEventListener('mouseup', () => canvas.removeEventListener('mousemove', handleInput));
+        canvas.addEventListener('touchstart', handleInput);
+        canvas.addEventListener('touchmove', handleInput);
+
+        document.getElementById('btn-open-modal').onclick = () => {
+            modal.style.display = "flex";
+            fillModalContent();
+        };
+        document.getElementById('btn-close-modal').onclick = () => modal.style.display = "none";
+        window.onclick = (e) => { if(e.target == modal) modal.style.display = "none"; };
+        
+        lockCheckbox.onchange = draw;
+
+        window.onload = () => {
+            draw();
+            setTimeout(() => { if(window.MathJax) MathJax.typesetPromise(); }, 500);
+        };
+    </script>
+</body>
+</html>
