@@ -133,9 +133,21 @@
         .flashcard-icon { font-size: 3rem; margin-bottom: 15px; opacity: 0.8; }
         .flashcard-def { font-size: 0.95rem; line-height: 1.5; }
         .flashcard-cond { margin-top: 10px; padding: 8px; background: #fff1f2; color: #be123c; border-radius: 6px; font-size: 0.85rem; border-left: 3px solid #be123c; width: 100%; text-align: left; }
+	header {
+            background-color: var(--secondary);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 5px solid var(--primary);
+        }
+
     </style>
 </head>
 <body>
+<header>
+    <h1>Théorie des Graphes : Analyseur de Graphes Expert </h1>
+    <p>Concepts, Mathématiques, Matrices et Algorithmes Animés Dynamiques</p>
+</header>
 
 <div class="container">
     <div class="toolbar">
@@ -184,7 +196,10 @@
         <button class="btn btn-purple" onclick="runColoring()">🌈 Coloration</button>
         <button class="btn btn-success" onclick="analyzeFeatures()">🔍 Analyse Expert</button>
         <button class="btn btn-warning" onclick="showMatrixSolution()">🔢 Matrice</button>
-        
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+        <input type="number" id="pathLengthK" value="2" min="1" max="10" style="width: 60px; padding: 5px; border: 1px solid var(--border); border-radius: 4px;">
+        <button class="btn btn-primary" onclick="generateMatrixPower()" style="flex: 1; padding: 8px;">Calculer $A^k$</button>
+    </div>
         <button class="btn btn-dark" onclick="openGlossaryCards()">📖 Flashcards</button>
         
         <button class="btn btn-outline" onclick="showCopyright()">© Crédits</button>
@@ -939,6 +954,121 @@ Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez
     function clearGraph() { graph = { nodes: [], edges: [] }; finalPathEdges = []; updateUI(); draw(); }
     function randomizeWeights() { graph.edges.forEach(e => e.w = Math.floor(Math.random() * 15) + 1); finalPathEdges = []; draw(); }
     function resetColors() { graph.nodes.forEach(n => { n.color = null; n.tempDist = ""; }); finalPathEdges = []; draw(); }
-</script>
+    function getAdjacencyMatrix() {
+    const size = graph.nodes.length;
+    let matrix = Array(size).fill().map(() => Array(size).fill(0));
+    graph.edges.forEach(edge => {
+        matrix[edge.u][edge.v] = 1;
+        matrix[edge.v][edge.u] = 1; // Graphe non-orienté
+    });
+    return matrix;
+}
+
+// Fonction utilitaire pour la multiplication de matrices
+    function multiplyMatrices(m1, m2) {
+        var r = [], c = m1.length;
+        for (var i = 0; i < c; i++) {
+            r[i] = [];
+            for (var j = 0; j < c; j++) {
+                var sum = 0;
+                for (var k = 0; k < c; k++) sum += m1[i][k] * m2[k][j];
+                r[i][j] = sum;
+            }
+        }
+        return r;
+    }
+
+    // Fonction principale modifiée pour inclure le calcul ciblé
+    function generateMatrixPower() {
+        if (graph.nodes.length === 0) {
+            alert("Veuillez créer un graphe d'abord.");
+            return;
+        }
+
+        const kInput = document.getElementById('pathLengthK');
+        const k = parseInt(kInput.value) || 1;
+        
+        // Construction de la Matrice d'Adjacence (0 ou 1 pour l'existence d'arête)
+        const n = graph.nodes.length;
+        let baseMatrix = Array.from({ length: n }, () => Array(n).fill(0));
+        
+        graph.edges.forEach(e => {
+            baseMatrix[e.u][e.v] = 1; 
+            if (!isDirected) {
+                baseMatrix[e.v][e.u] = 1;
+            }
+        });
+
+        // Calcul de A^k
+        let resultMatrix = baseMatrix;
+        for (let i = 1; i < k; i++) {
+            resultMatrix = multiplyMatrices(resultMatrix, baseMatrix);
+        }
+
+        // --- GÉNÉRATION DU CONTENU HTML ---
+        let html = "";
+        
+        // [AJOUT] : Récupération des sommets sélectionnés dans l'interface (Dijkstra)
+        const sSelect = document.getElementById('startNode');
+        const eSelect = document.getElementById('endNode');
+        let selectedU = -1, selectedV = -1;
+
+        if (sSelect && eSelect && sSelect.value !== "" && eSelect.value !== "") {
+            selectedU = parseInt(sSelect.value);
+            selectedV = parseInt(eSelect.value);
+            
+            const count = resultMatrix[selectedU][selectedV];
+            const uLabel = graph.nodes[selectedU].label;
+            const vLabel = graph.nodes[selectedV].label;
+            
+            // Affichage du résultat spécifique en haut de la fenêtre
+            html += `<div style="margin-bottom: 20px; padding: 15px; background: #eff6ff; border-left: 5px solid #2563eb; border-radius: 4px; color: #1e3a8a; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h3 style="margin-top:0; color: #2563eb; font-size: 1.1rem; display:flex; align-items:center; gap:8px;">
+                    🔍 Analyse Spécifique : ${uLabel} → ${vLabel}
+                </h3>
+                <p style="font-size: 1.05rem; margin-bottom: 0;">
+                    Il existe exactement <span style="font-size: 1.4rem; font-weight: 800; color: #dc2626; padding: 0 5px;">${count}</span> 
+                    chemin(s) de longueur <strong>${k}</strong> arête(s) reliant ces deux sommets.
+                </p>
+            </div>`;
+        }
+
+        // Affichage classique de la matrice
+        html += `<p>La matrice $A^{${k}}$ indique le nombre de chemins de longueur ${k} entre tous les sommets.</p>`;
+        html += `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; text-align:center; margin-top:10px;">`;
+        
+        // En-têtes
+        html += `<tr><th style="border:1px solid var(--border); padding:8px; background:#f8fafc;"></th>`;
+        graph.nodes.forEach(n => html += `<th style="border:1px solid var(--border); padding:8px; background:#f8fafc;">${n.label}</th>`);
+        html += `</tr>`;
+
+        // Corps de la matrice
+        resultMatrix.forEach((row, i) => {
+            html += `<tr><th style="border:1px solid var(--border); padding:8px; background:#f8fafc;">${graph.nodes[i].label}</th>`;
+            row.forEach((val, j) => {
+                // Détermine si c'est la cellule ciblée par l'utilisateur
+                const isTargetCell = (i === selectedU && j === selectedV);
+                
+                // Style dynamique : Mise en évidence forte si c'est la cellule cible
+                let cellStyle = "border:1px solid var(--border); padding:8px; ";
+                if (isTargetCell) {
+                    cellStyle += "background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; font-weight: 900; font-size: 1.1em;";
+                } else {
+                    cellStyle += val > 0 ? 'font-weight:bold; color:var(--primary);' : 'color:#94a3b8;';
+                }
+
+                html += `<td style="${cellStyle}">${val}</td>`;
+            });
+            html += `</tr>`;
+        });
+        html += `</table></div>`;
+        
+        openModal(html);
+        
+        // Rafraîchissement du rendu mathématique (LaTeX)
+        if(window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('modalBody')]).catch(()=>{});
+        }
+    }</script>
 </body>
 </html>
