@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cours Complet : Théorie des Graphes (Dynamique & Expert)</title>
+    
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --bg: #f4f6f7;
+            --text: #333;
+            --code-bg: #eaeaea;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: var(--secondary);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 5px solid var(--primary);
+        }
+
+        h1 { margin: 0; }
+        h2 { color: var(--secondary); border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin-top: 3rem; }
+        h3 { color: var(--primary); margin-top: 1.5rem; }
+        h4 { color: var(--secondary); font-style: italic; }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        .definition {
+            background-color: #e8f6fd;
+            border-left: 5px solid var(--primary);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .theorem {
+            background-color: #e9f7ef;
+            border-left: 5px solid var(--success);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        /* Styles Canvas et Contrôles */
+        .canvas-container {
+            text-align: center;
+            margin: 2rem 0;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+        }
+
+        canvas {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 100%;
+            cursor: grab;
+        }
+        canvas:active { cursor: grabbing; }
+
+        .controls {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        button {
+            padding: 0.6rem 1.2rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        button:hover { background-color: #2980b9; }
+        button.reset { background-color: var(--accent); }
+        button.reset:hover { background-color: #c0392b; }
+        button.action { background-color: var(--success); }
+        button.action:hover { background-color: #219150; }
+        button.generate { background-color: var(--secondary); border: 1px solid #34495e; }
+        button.generate:hover { background-color: #34495e; }
+        button.compare { background-color: #8e44ad; } 
+        button.compare:hover { background-color: #732d91; }
+
+        .legend {
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .dot { height: 12px; width: 12px; display: inline-block; border-radius: 50%; border: 1px solid #999;}
+
+        /* Styles Matrices et Inputs */
+        .matrix-wrapper {
+            overflow-x: auto;
+            margin: 1rem 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        table.matrix {
+            border-collapse: collapse;
+            font-family: 'Courier New', monospace;
+        }
+        table.matrix td, table.matrix th {
+            border: 1px solid #bdc3c7;
+            padding: 8px 12px;
+            text-align: center;
+            min-width: 30px;
+        }
+        table.matrix th { background-color: var(--secondary); color: white; }
+        table.matrix tr:nth-child(even) { background-color: #f2f2f2; }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        input[type="number"], select {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+        }
+
+        /* --- STYLES MODALE (POPUP) --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 950px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideIn 0.3s;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .close-btn:hover { color: var(--accent); }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .result-table th, .result-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .result-table th {
+            background-color: var(--secondary);
+            color: white;
+        }
+        .result-table tr:nth-child(even) { background-color: #f9f9f9; }
+
+        /* --- STYLES SPÉCIFIQUES DIJKSTRA --- */
+        .dij-header-start, .dij-header-end { 
+            background-color: #27ae60 !important; 
+            color: white !important; 
+            border-bottom: 3px solid #145a32 !important; 
+        }
+        .dij-cell-update { 
+            color: #c0392b; 
+            font-weight: bold; 
+            background-color: #fadbd8; 
+            border: 2px solid #e74c3c !important;
+        }
+        .dij-cell-fixed { 
+            font-weight: bold; 
+            background-color: #d5dbdb; 
+        }
+        .dij-path-summary { 
+            margin-top: 15px; 
+            padding: 15px; 
+            background: #e9f7ef; 
+            border-left: 5px solid #27ae60; 
+            color: #1e8449; 
+            font-weight: bold; 
+        }
+
+        /* Zone de comparaison BFS/DFS */
+        #comparisonContainer {
+            display: none;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px dashed #bdc3c7;
+            animation: slideIn 0.5s;
+        }
+        .comparison-wrapper { display: flex; flex-wrap: wrap; justify-content: space-around; gap: 20px; }
+        .comparison-box { flex: 1; min-width: 300px; text-align: center; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+	.btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Théorie des Graphes : Cours Complet</h1>
+    <p>Concepts, Mathématiques, Matrices et Algorithmes Animés Dynamiques <button class="btn btn-outline" onclick="showCopyright()">© Crédits</button>
+</p>
+</header>
+
+<div class="container">
+
+    <section>
+        <h2>1. Fondamentaux et Définitions</h2>
+        <p>Un graphe modélise des relations. Au-delà de la définition de base, voici les concepts structurels essentiels.</p>
+
+        <div class="definition">
+            <h3>Définitions Formelles</h3>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0; flex-wrap: wrap;">
+    <span style="font-size: 1.1rem; font-weight: 500;">
+        Soit un graphe \( G = (V, E) \).
+    </span>
+    
+    <button class="generate" onclick="showNotationDefinition()" 
+            style="padding: 0.3rem 0.7rem; font-size: 0.8rem; cursor: pointer;">
+        📘 Notation G = (V, E)
+    </button>
+</div>
+            <ul>		
+		<li><strong>Boucle :</strong> Arête dont les deux extrémités sont confondues sur le même sommet.<br>
+		Ajoute 2 au degré (Graphe non-orienté) ou 1 degré entrant / 1 degré sortant (Graphe orienté).</li>
+                <li><strong>Graphe Simple :</strong> Un graphe sans boucles ni arêtes multiples.</li>		<li><strong>Graphe Connexe :</strong> Graphe où il existe au moins une chaîne entre n'importe quelle paire de sommets.<br>
+		Dans un graphe orienté, on parle de connexité forte si \(u\rightarrow v\) ET \(v\rightarrow u\) sont possibles pour tout couple de sommets \((u;v)\).</li>
+		<li><strong>Graphe Complet (\(K_n\)) : </strong> Graphe simple où chaque sommet est relié à TOUS les autres sommets.
+		<ul>
+		    <li>Graphe non-orienté : \(\dfrac{n(n-1)}{2}\) arêtes.</li>
+		    <li>Orienté : chaque paire a 2 arcs (aller-retour).</li>
+		</ul>
+		<li><strong>Chaîne Eulérienne : </strong> Parcours qui emprunte chaque arête du graphe exactement une fois.
+		<ul>
+		    <li>Dans le cas d'un graphe orienté : Pour chaque sommet, degré entrant = degré sortant (sauf départ/arrivée).</li>
+		</ul>
+		</li>
+		<li><strong>Cycle Eulérien : </strong> Chaîne eulérienne dont le sommet de départ et le sommet d'arrivée sont identiques
+		<ul>
+		    <li>Dans le cas d'un graphe orienté : Degré entrant = Degré sortant pour TOUS les sommets.</li>
+		</ul>
+		</li>
+		<li><strong>Nombre Chromatique : </strong> Nombre minimal de couleurs nécessaires pour colorer les sommets sans adjacence identique.<br>
+		Généralement calculé sur le graphe non-orienté sous-jacent.
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h2>2. Matrices et Dénombrement de Chemins</h2>
+        <div class="definition">
+            <h3>Matrice d'Adjacence et Puissance</h3>
+            <p>Le coefficient \( (i, j) \) de la matrice \( A^k \) donne le <strong>nombre de chemins de longueur \( k \)</strong> reliant le sommet \( i \) au sommet \( j \).</p>
+        </div>
+
+        <div class="canvas-container">
+            <h3>Calculateur de Chemins (\( A^N \))</h3>
+            <div class="input-group">
+                <label for="pathLength">Longueur \( N \) : </label>
+                <input type="number" id="pathLength" value="2" min="1" max="5">
+                <button class="action" onclick="calculateMatrixPower()">Calculer \( A^N \)</button>
+            </div>
+            <div id="matrixOutput" class="matrix-wrapper"></div>
+            <p id="matrixInterpretation" style="font-style: italic; color: var(--secondary);"></p>
+        </div>
+    </section>
+
+    <section>
+        <h2>3. Algorithmes de Parcours (BFS & DFS)</h2>
+        <p>Visualisation des algorithmes de parcours sur un graphe généré aléatoirement.</p>
+
+        <div class="canvas-container">
+            <div class="controls" style="margin-bottom: 10px;">
+                <button class="generate" onclick="regenerateBFS()">🎲 Nouveau Graphe Aléatoire</button>
+            </div>
+            
+            <canvas id="graphCanvas" width="600" height="400"></canvas>
+            
+            <div class="legend">
+                <span><span class="dot" style="background:#ecf0f1; border-color:#bdc3c7;"></span> Non visité</span>
+                <span><span class="dot" style="background:#f1c40f;"></span> En File/Pile</span>
+                <span><span class="dot" style="background:#3498db;"></span> Traité</span>
+            </div>
+
+            <div class="controls">
+                <button onclick="startBFS()">Parcours Largeur (BFS)</button>
+                <button onclick="startDFS()">Parcours Profondeur (DFS)</button>
+                <button class="reset" onclick="resetGraphAnimation()">Réinitialiser Animation</button>
+                <button class="compare" onclick="startComparisonMode()">⚡ Comparer BFS vs DFS</button>
+            </div>
+            <p id="statusText" style="font-weight: bold; color: var(--primary); min-height: 1.5em;"></p>
+
+            <div id="comparisonContainer">
+                <h3>Mode Comparaison Simultanée</h3>
+                <div class="comparison-wrapper">
+                    <div class="comparison-box">
+                        <h4>BFS (Largeur)</h4>
+                        <canvas id="compCanvasBFS" width="400" height="300"></canvas>
+                    </div>
+                    <div class="comparison-box">
+                        <h4>DFS (Profondeur)</h4>
+                        <canvas id="compCanvasDFS" width="400" height="300"></canvas>
+                    </div>
+                </div>
+                <div class="controls" style="margin-top:10px;">
+                    <button class="reset" onclick="closeComparisonMode()">Fermer la Comparaison</button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section>
+        <h2>4. Cycles Eulériens et Coloration</h2>
+        <div class="theorem">
+            <h3>Théorème d'Euler</h3>
+            <ul>
+                <li><strong>Cycle Eulérien :</strong> Si et seulement si tous les sommets sont de degré pair.</li>
+                <li><strong>Chaîne Eulérienne :</strong> Si et seulement si exactement deux sommets sont de degré impair.</li>
+            </ul>
+        </div>
+
+        <div class="canvas-container">
+            <div class="controls" style="margin-bottom: 10px;">
+                <button class="generate" onclick="regenerateColor()">🎲 Nouveau Graphe Aléatoire</button>
+            </div>
+            <canvas id="colorCanvas" width="600" height="300"></canvas>
+            <div class="controls">
+                <button class="action" onclick="runColoring()">Lancer la Coloration</button>
+                <button class="reset" onclick="resetColoringAnimation()">Réinitialiser Couleurs</button>
+            </div>
+            <p id="colorStatus"></p>
+        </div>
+    </section>
+
+    <section>
+        <h2>5. Plus Court Chemin : Algorithme de Dijkstra</h2>
+        <p>Dans un graphe pondéré, Dijkstra permet de trouver le chemin optimal. Sélectionnez un point de départ et d'arrivée ci-dessous.</p>
+
+        <div class="definition">
+            <h3>Principe</h3>
+            <ol>
+                <li>Initialiser les distances (0 pour départ, \( \infty \) ailleurs).</li>
+                <li>Choisir le sommet non visité avec la plus petite distance.</li>
+                <li>Mettre à jour les voisins : si \( d(u) + poids(u,v) < d(v) \), on améliore \( d(v) \).</li>
+            </ol>
+        </div>
+
+        <div class="canvas-container">
+            <div class="controls" style="margin-bottom: 10px;">
+                <button class="generate" onclick="regenerateDijkstra()">🎲 Nouveau Graphe Pondéré</button>
+            </div>
+            
+            <div class="input-group" style="margin: 15px 0; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                <label for="dijkstraStart" style="font-weight:bold; color:#27ae60;">🏁 Départ :</label>
+                <select id="dijkstraStart"></select>
+                
+                <span style="margin: 0 15px; font-weight:bold; color:#aaa;">➔</span>
+                
+                <label for="dijkstraEnd" style="font-weight:bold; color:#c0392b;">🎯 Arrivée :</label>
+                <select id="dijkstraEnd"></select>
+            </div>
+
+            <canvas id="dijkstraCanvas" width="600" height="400"></canvas>
+            
+            <div class="legend">
+                <span><span class="dot" style="background:#fff; border-color:#aaa;"></span> \( \infty \) Infini</span>
+                <span><span class="dot" style="background:#e74c3c;"></span> Sommet Actuel</span>
+                <span><span class="dot" style="background:#27ae60;"></span> Distance figée</span>
+            </div>
+
+            <div class="controls">
+                <button class="action" onclick="startDijkstra()">Lancer Dijkstra (Avec Tableau)</button>
+                <button class="reset" onclick="resetDijkstraAnimation()">Réinitialiser Animation</button>
+            </div>
+            <p id="dijkstraStatus" style="font-weight: bold; color: var(--secondary); min-height: 1.5em;"></p>
+        </div>
+    </section>
+
+</div>
+
+<div id="resultModal" class="modal-overlay" onclick="if(event.target === this) closeModal()">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h3 id="modalTitle" style="margin-top:0;">Résultats</h3>
+        <div id="modalBody"></div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="closeModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ==================================================================
+       UTILITAIRES : GÉNÉRATEUR DE GRAPHES ALÉATOIRES
+       ================================================================== */
+    
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function isTooClose(x, y, nodes, minDistance) {
+        for (let node of nodes) {
+            let dx = node.x - x;
+            let dy = node.y - y;
+            if (Math.sqrt(dx*dx + dy*dy) < minDistance) return true;
+        }
+        return false;
+    }
+
+    function generateGraphData(width, height, isWeighted = false) {
+        const numNodes = getRandomInt(5, 8);
+        const nodes = [];
+        const edges = [];
+        const margin = 50;
+        const labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+
+        for (let i = 0; i < numNodes; i++) {
+            let attempts = 0;
+            let placed = false;
+            while(attempts < 100 && !placed) {
+                let x = getRandomInt(margin, width - margin);
+                let y = getRandomInt(margin, height - margin);
+                if (!isTooClose(x, y, nodes, 80)) {
+                    nodes.push({ id: i, label: labels[i], x: x, y: y, color: null, dist: Infinity });
+                    placed = true;
+                }
+                attempts++;
+            }
+            if(!placed) { 
+                nodes.push({ id: i, label: labels[i], x: width/2, y: height/2, color: null, dist: Infinity });
+            }
+        }
+
+        for (let i = 0; i < numNodes - 1; i++) {
+             let w = isWeighted ? getRandomInt(1, 15) : null;
+             edges.push({ u: i, v: i+1, w: w });
+        }
+
+        const extraEdges = getRandomInt(numNodes, numNodes * 2);
+        for(let k=0; k < extraEdges; k++) {
+            let u = getRandomInt(0, numNodes - 1);
+            let v = getRandomInt(0, numNodes - 1);
+            if (u !== v) {
+                let exists = edges.some(e => (e.u === u && e.v === v) || (e.u === v && e.v === u));
+                if (!exists) {
+                    let w = isWeighted ? getRandomInt(1, 15) : null;
+                    edges.push({ u: u, v: v, w: w });
+                }
+            }
+        }
+        
+        const simpleEdges = edges.map(e => [e.u, e.v]);
+        return { nodes, edgesObj: edges, edgesSimple: simpleEdges };
+    }
+
+    /* ==================================================================
+       PARTIE 1 : BFS/DFS
+       ================================================================== */
+    
+    let nodesBFS = [];
+    let edgesBFS = [];
+    const canvasBFS = document.getElementById('graphCanvas');
+    const ctxBFS = canvasBFS.getContext('2d');
+    const statusBFS = document.getElementById('statusText');
+    const NODE_RADIUS = 20;
+    const ANIMATION_DELAY = 600;
+
+    let visitedBFS = new Set();
+    let processingBFS = new Set();
+    let animationQueueBFS = [];
+    let isAnimatingBFS = false;
+    
+    let traversalHistory = []; 
+    let lastAlgorithmUsed = ""; 
+
+    function initBFSGraph() {
+        const data = generateGraphData(canvasBFS.width, canvasBFS.height);
+        nodesBFS = data.nodes;
+        edgesBFS = data.edgesSimple;
+        resetGraphAnimation();
+        calculateMatrixPower();
+    }
+
+    function regenerateBFS() {
+        if(isAnimatingBFS) return;
+        initBFSGraph();
+        closeComparisonMode();
+    }
+
+    function drawGraphBFS() {
+        ctxBFS.clearRect(0, 0, canvasBFS.width, canvasBFS.height);
+        ctxBFS.lineWidth = 2;
+        edgesBFS.forEach(edge => {
+            const n1 = nodesBFS.find(n => n.id === edge[0]);
+            const n2 = nodesBFS.find(n => n.id === edge[1]);
+            if(n1 && n2) {
+                ctxBFS.beginPath(); ctxBFS.moveTo(n1.x, n1.y); ctxBFS.lineTo(n2.x, n2.y);
+                ctxBFS.strokeStyle = '#aaa'; ctxBFS.stroke();
+            }
+        });
+
+        nodesBFS.forEach(node => {
+            ctxBFS.beginPath(); ctxBFS.arc(node.x, node.y, NODE_RADIUS, 0, 2 * Math.PI);
+            if (visitedBFS.has(node.id)) { ctxBFS.fillStyle = '#3498db'; ctxBFS.strokeStyle = '#2980b9'; }
+            else if (processingBFS.has(node.id)) { ctxBFS.fillStyle = '#f1c40f'; ctxBFS.strokeStyle = '#f39c12'; }
+            else { ctxBFS.fillStyle = '#ecf0f1'; ctxBFS.strokeStyle = '#bdc3c7'; }
+            ctxBFS.fill(); ctxBFS.stroke();
+            
+            ctxBFS.fillStyle = visitedBFS.has(node.id) ? '#fff' : '#333';
+            ctxBFS.font = 'bold 16px Arial';
+            ctxBFS.textAlign = 'center'; ctxBFS.textBaseline = 'middle';
+            ctxBFS.fillText(node.label, node.x, node.y);
+        });
+    }
+
+    function getNeighborsBFS(nodeId) {
+        const neighbors = [];
+        edgesBFS.forEach(edge => {
+            if (edge[0] === nodeId) neighbors.push(edge[1]);
+            if (edge[1] === nodeId) neighbors.push(edge[0]);
+        });
+        return neighbors.sort((a,b) => a - b);
+    }
+
+    async function playAnimationBFS() {
+        if (isAnimatingBFS) return;
+        isAnimatingBFS = true;
+        visitedBFS.clear(); processingBFS.clear(); drawGraphBFS();
+
+        for (let step of animationQueueBFS) {
+            statusBFS.textContent = step.message;
+            if (step.type === 'visit') visitedBFS.add(step.id);
+            if (step.type === 'process_add') processingBFS.add(step.id);
+            if (step.type === 'process_remove') processingBFS.delete(step.id);
+            drawGraphBFS();
+            await new Promise(r => setTimeout(r, ANIMATION_DELAY));
+        }
+        statusBFS.textContent = "Parcours terminé !";
+        isAnimatingBFS = false;
+
+        setTimeout(() => { showModal(lastAlgorithmUsed, traversalHistory); }, 500);
+    }
+
+    function startBFS() {
+        if (isAnimatingBFS) return;
+        closeComparisonMode(); 
+        animationQueueBFS = []; visitedBFS.clear(); processingBFS.clear();
+        traversalHistory = [];
+        lastAlgorithmUsed = "BFS";
+        
+        const startNodeId = nodesBFS[0].id;
+        const queue = [startNodeId];
+        const localVisited = new Set([startNodeId]);
+        
+        let parents = {}; parents[startNodeId] = null;
+        animationQueueBFS.push({ type: 'process_add', id: startNodeId, message: "Ajout " + nodesBFS[0].label + " à la file" });
+        let visitOrder = 1;
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const currentNode = nodesBFS.find(n=>n.id===current);
+            const parentNodeId = parents[current];
+            const parentLabel = parentNodeId !== null && parentNodeId !== undefined ? nodesBFS.find(n=>n.id===parentNodeId).label : "-";
+
+            animationQueueBFS.push({ type: 'process_remove', id: current, message: `Sortie de ${currentNode.label}` });
+            animationQueueBFS.push({ type: 'visit', id: current, message: `Visite ${currentNode.label}` });
+            traversalHistory.push({ order: visitOrder++, node: currentNode.label, parent: parentLabel });
+
+            const neighbors = getNeighborsBFS(current);
+            for (let neighbor of neighbors) {
+                if (!localVisited.has(neighbor)) {
+                    localVisited.add(neighbor);
+                    queue.push(neighbor);
+                    parents[neighbor] = current;
+                    animationQueueBFS.push({ type: 'process_add', id: neighbor, message: `Découverte ${nodesBFS.find(n=>n.id===neighbor).label}` });
+                }
+            }
+        }
+        playAnimationBFS();
+    }
+
+    function startDFS() {
+        if (isAnimatingBFS) return;
+        closeComparisonMode(); 
+        animationQueueBFS = []; visitedBFS.clear(); processingBFS.clear();
+        traversalHistory = []; 
+        lastAlgorithmUsed = "DFS";
+        
+        const localVisited = new Set();
+        const startNodeId = nodesBFS[0].id;
+        let visitOrder = 1;
+
+        function dfsRecursive(nodeId, parentId) {
+            localVisited.add(nodeId);
+            const currentNode = nodesBFS.find(n=>n.id===nodeId);
+            const parentLabel = parentId !== null ? nodesBFS.find(n=>n.id===parentId).label : "-";
+
+            animationQueueBFS.push({ type: 'process_add', id: nodeId, message: `Empile ${currentNode.label}` });
+            animationQueueBFS.push({ type: 'visit', id: nodeId, message: `Visite ${currentNode.label}` });
+            traversalHistory.push({ order: visitOrder++, node: currentNode.label, parent: parentLabel });
+
+            const neighbors = getNeighborsBFS(nodeId);
+            for (let neighbor of neighbors) {
+                if (!localVisited.has(neighbor)) {
+                    dfsRecursive(neighbor, nodeId);
+                }
+            }
+            animationQueueBFS.push({ type: 'process_remove', id: nodeId, message: `Dépile ${currentNode.label}` });
+        }
+        dfsRecursive(startNodeId, null);
+        playAnimationBFS();
+    }
+
+    function resetGraphAnimation() {
+        if(isAnimatingBFS) {
+             isAnimatingBFS = false;
+             animationQueueBFS = [];
+             setTimeout(() => { visitedBFS.clear(); processingBFS.clear(); statusBFS.textContent = ""; drawGraphBFS(); }, 100);
+        } else {
+            visitedBFS.clear(); processingBFS.clear(); statusBFS.textContent = ""; drawGraphBFS();
+        }
+        closeComparisonMode();
+    }
+
+    /* ==================================================================
+       MODE COMPARAISON (CORRIGÉ)
+       ================================================================== */
+    const canvasCompBFS = document.getElementById('compCanvasBFS');
+    const ctxCompBFS = canvasCompBFS.getContext('2d');
+    const canvasCompDFS = document.getElementById('compCanvasDFS');
+    const ctxCompDFS = canvasCompDFS.getContext('2d');
+    let isComparing = false;
+    let visitedCompBFS = new Set(), processingCompBFS = new Set();
+    let visitedCompDFS = new Set(), processingCompDFS = new Set();
+
+    function drawCompGraph(ctx, visitedSet, processingSet) {
+        ctx.clearRect(0, 0, canvasCompBFS.width, canvasCompBFS.height);
+        const scaleX = canvasCompBFS.width / canvasBFS.width;
+        const scale = Math.min(scaleX, canvasCompBFS.height / canvasBFS.height);
+        
+        ctx.save(); ctx.scale(scale, scale);
+        ctx.lineWidth = 2;
+        edgesBFS.forEach(edge => {
+            const n1 = nodesBFS.find(n => n.id === edge[0]);
+            const n2 = nodesBFS.find(n => n.id === edge[1]);
+            if(n1 && n2) {
+                ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y);
+                ctx.strokeStyle = '#aaa'; ctx.stroke();
+            }
+        });
+        nodesBFS.forEach(node => {
+            ctx.beginPath(); ctx.arc(node.x, node.y, NODE_RADIUS, 0, 2 * Math.PI);
+            if (visitedSet.has(node.id)) { ctx.fillStyle = '#3498db'; }
+            else if (processingSet.has(node.id)) { ctx.fillStyle = '#f1c40f'; }
+            else { ctx.fillStyle = '#ecf0f1'; ctx.strokeStyle = '#bdc3c7'; }
+            ctx.fill(); ctx.stroke();
+        });
+        ctx.restore();
+    }
+
+    // Fonction auxiliaire pour BFS (ajoutée pour la comparaison)
+    function getBFSAnimationSequence() {
+        const seq = [];
+        const localVis = new Set();
+        const start = nodesBFS[0].id;
+        const q = [start];
+        localVis.add(start);
+        seq.push({type:'process_add', id:start});
+        while(q.length > 0) {
+            const u = q.shift();
+            seq.push({type:'process_remove', id:u});
+            seq.push({type:'visit', id:u});
+            const neighbors = getNeighborsBFS(u);
+            for(let v of neighbors) {
+                if(!localVis.has(v)) {
+                    localVis.add(v); q.push(v);
+                    seq.push({type:'process_add', id:v});
+                }
+            }
+        }
+        return seq;
+    }
+
+    // Fonction auxiliaire pour DFS (ajoutée pour la comparaison)
+    function getDFSAnimationSequence() {
+        const seq = [];
+        const localVis = new Set();
+        const start = nodesBFS[0].id;
+        function dfs(u) {
+            localVis.add(u);
+            seq.push({type:'process_add', id:u});
+            seq.push({type:'visit', id:u});
+            const neighbors = getNeighborsBFS(u);
+            for(let v of neighbors) {
+                if(!localVis.has(v)) dfs(v);
+            }
+            seq.push({type:'process_remove', id:u});
+        }
+        dfs(start);
+        return seq;
+    }
+
+    function startComparisonMode() {
+        if(isAnimatingBFS || isComparing) return;
+        
+        const container = document.getElementById('comparisonContainer');
+        container.style.display = 'block';
+        container.scrollIntoView({ behavior: 'smooth' });
+
+        isComparing = true;
+        
+        visitedCompBFS.clear(); processingCompBFS.clear();
+        visitedCompDFS.clear(); processingCompDFS.clear();
+        
+        // Utilisation des fonctions auxiliaires pour obtenir les séquences
+        const queueAniBFS = getBFSAnimationSequence();
+        const queueAniDFS = getDFSAnimationSequence();
+        
+        animateComparison(queueAniBFS, queueAniDFS);
+    }
+
+    async function animateComparison(seqBFS, seqDFS) {
+        let idxBFS = 0;
+        let idxDFS = 0;
+        
+        while((idxBFS < seqBFS.length || idxDFS < seqDFS.length) && isComparing) {
+            
+            if(idxBFS < seqBFS.length) {
+                const s = seqBFS[idxBFS];
+                if(s.type === 'visit') visitedCompBFS.add(s.id);
+                if(s.type === 'process_add') processingCompBFS.add(s.id);
+                if(s.type === 'process_remove') processingCompBFS.delete(s.id);
+                idxBFS++;
+            }
+
+            if(idxDFS < seqDFS.length) {
+                const s = seqDFS[idxDFS];
+                if(s.type === 'visit') visitedCompDFS.add(s.id);
+                if(s.type === 'process_add') processingCompDFS.add(s.id);
+                if(s.type === 'process_remove') processingCompDFS.delete(s.id);
+                idxDFS++;
+            }
+
+            drawCompGraph(ctxCompBFS, visitedCompBFS, processingCompBFS);
+            drawCompGraph(ctxCompDFS, visitedCompDFS, processingCompDFS);
+            
+            await new Promise(r => setTimeout(r, 600));
+        }
+    }
+
+    function closeComparisonMode() {
+        document.getElementById('comparisonContainer').style.display = 'none';
+        isComparing = false;
+    }
+
+    /* ==================================================================
+       GESTION DE LA MODALE ET TABLEAUX
+       ================================================================== */
+    function showModal(type, data, extraInfo = null) {
+        if(isComparing) return;
+        const modal = document.getElementById('resultModal');
+        const title = document.getElementById('modalTitle');
+        const body = document.getElementById('modalBody');
+
+        title.textContent = `Résultats : ${type}`;
+        let html = "";
+
+        // --- TABLEAU DIJKSTRA SPÉCIFIQUE ---
+        if (type === 'Dijkstra') {
+            html += `<table class="result-table"><thead><tr><th>Étape (Sommet Choisi)</th>`;
+            
+            // En-têtes avec colonnes Start/End en vert
+            extraInfo.nodes.forEach(n => {
+                let headerClass = "";
+                if(n.id === extraInfo.start) headerClass = "dij-header-start";
+                else if(n.id === extraInfo.end) headerClass = "dij-header-end";
+                html += `<th class="${headerClass}">${n.label}</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+            
+            // Corps du tableau
+            data.forEach(row => {
+                const fixedNodeLabel = extraInfo.nodes.find(n => n.id === row.fixedNode).label;
+                html += `<tr>`;
+                html += `<td class="dij-cell-fixed">${fixedNodeLabel}</td>`; // Sommet pivot
+                
+                extraInfo.nodes.forEach((n, idx) => {
+                    const distVal = row.distances[idx];
+                    const displayVal = distVal === Infinity ? '∞' : distVal;
+                    // Si c'est une valeur mise à jour à cette étape -> Rouge
+                    const isUpdated = row.updates.includes(n.id);
+                    const cellClass = isUpdated ? "dij-cell-update" : "";
+                    html += `<td class="${cellClass}">${displayVal}</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+
+            // Résumé du chemin
+            if (extraInfo.path.length > 0) {
+                html += `<div class="dij-path-summary">
+                            ✅ Chemin optimal (${extraInfo.nodes.find(n=>n.id==extraInfo.start).label} ➔ ${extraInfo.nodes.find(n=>n.id==extraInfo.end).label}) : 
+                            <br> ${extraInfo.path.map(id => extraInfo.nodes.find(n=>n.id==id).label).join(' ➔ ')}
+                            <br> Distance Totale : ${extraInfo.totalDist}
+                         </div>`;
+            } else {
+                 html += `<div class="dij-path-summary" style="background:#fdedec; color:#c0392b;">
+                            ❌ Pas de chemin trouvé.
+                         </div>`;
+            }
+            html += `<p style="font-size:0.85em; color:#666;">Légende : <span style="color:#27ae60; font-weight:bold;">Vert</span> = Départ/Arrivée, <span style="color:#c0392b; font-weight:bold;">Rouge</span> = Distance améliorée.</p>`;
+
+        } else {
+            // Tableau BFS/DFS Standard
+            html += `<table class="result-table"><thead><tr><th>Ordre</th><th>Sommet</th><th>Parent</th></tr></thead><tbody>`;
+            data.forEach(row => {
+                html += `<tr><td>${row.order}</td><td><strong>${row.node}</strong></td><td>${row.parent}</td></tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+        body.innerHTML = html;
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('resultModal').style.display = 'none'; }
+
+
+    /* ==================================================================
+       PARTIE 2 : MATRICES
+       ================================================================== */
+    function getAdjacencyMatrix() {
+        const size = nodesBFS.length;
+        let matrix = Array(size).fill().map(() => Array(size).fill(0));
+        edgesBFS.forEach(edge => {
+            if(edge[0] < size && edge[1] < size) { matrix[edge[0]][edge[1]] = 1; matrix[edge[1]][edge[0]] = 1; }
+        });
+        return matrix;
+    }
+    function multiplyMatrices(m1, m2) {
+        const result = [];
+        for (let i = 0; i < m1.length; i++) {
+            result[i] = [];
+            for (let j = 0; j < m2[0].length; j++) {
+                let sum = 0;
+                for (let k = 0; k < m1[0].length; k++) { sum += m1[i][k] * m2[k][j]; }
+                result[i][j] = sum;
+            }
+        }
+        return result;
+    }
+    function calculateMatrixPower() {
+        if(nodesBFS.length === 0) return;
+        const n = parseInt(document.getElementById('pathLength').value);
+        let resultMatrix = getAdjacencyMatrix();
+        const baseMatrix = resultMatrix;
+        for (let i = 1; i < n; i++) resultMatrix = multiplyMatrices(resultMatrix, baseMatrix);
+        
+        let html = `<table class="matrix"><tr><th></th>`;
+        nodesBFS.forEach(n => html += `<th>${n.label}</th>`);
+        html += "</tr>";
+        resultMatrix.forEach((row, i) => {
+            html += `<tr><th>${nodesBFS[i].label}</th>`;
+            row.forEach(val => html += `<td>${val}</td>`);
+            html += "</tr>";
+        });
+        html += "</table>";
+        document.getElementById('matrixOutput').innerHTML = html;
+    }
+
+
+    /* ==================================================================
+       PARTIE 3 : COLORIAGE
+       ================================================================== */
+    let nodesColor = [], edgesColor = [];
+    const colorCanvas = document.getElementById('colorCanvas');
+    const ctxColor = colorCanvas.getContext('2d');
+    const PALETTE = ['#e74c3c', '#2ecc71', '#3498db', '#9b59b6', '#f1c40f'];
+
+    function initColorGraph() {
+        const data = generateGraphData(colorCanvas.width, colorCanvas.height);
+        nodesColor = data.nodes; edgesColor = data.edgesSimple;
+        resetColoringAnimation();
+    }
+    function regenerateColor() { initColorGraph(); }
+    function drawColorGraph() {
+        ctxColor.clearRect(0, 0, colorCanvas.width, colorCanvas.height);
+        edgesColor.forEach(e => {
+            const n1 = nodesColor.find(n => n.id === e[0]);
+            const n2 = nodesColor.find(n => n.id === e[1]);
+            if(n1 && n2) {
+                ctxColor.beginPath(); ctxColor.moveTo(n1.x, n1.y); ctxColor.lineTo(n2.x, n2.y);
+                ctxColor.strokeStyle = '#333'; ctxColor.stroke();
+            }
+        });
+        nodesColor.forEach((n) => {
+            ctxColor.beginPath(); ctxColor.arc(n.x, n.y, 20, 0, 2*Math.PI);
+            ctxColor.fillStyle = n.color ? n.color : '#fff';
+            ctxColor.fill(); ctxColor.stroke();
+            ctxColor.fillStyle = '#000'; ctxColor.font = "bold 14px Arial";
+            ctxColor.textAlign = "center"; ctxColor.textBaseline = "middle";
+            ctxColor.fillText(n.label, n.x, n.y);
+        });
+    }
+    async function runColoring() {
+        resetColoringAnimation();
+        for(let i=0; i<nodesColor.length; i++) {
+            const node = nodesColor[i];
+            let used = new Set();
+            edgesColor.forEach(e => {
+                let neighborId = (e[0]===node.id)?e[1]:(e[1]===node.id?e[0]:-1);
+                if(neighborId!==-1) {
+                    const n = nodesColor.find(x=>x.id===neighborId);
+                    if(n && n.color) used.add(n.color);
+                }
+            });
+            node.color = PALETTE.find(c => !used.has(c)) || '#000';
+            drawColorGraph();
+            await new Promise(r => setTimeout(r, 400));
+        }
+    }
+    function resetColoringAnimation() {
+        nodesColor.forEach(n => n.color = null);
+        drawColorGraph();
+    }
+
+
+    /* ==================================================================
+       PARTIE 4 : DIJKSTRA (MODIFIÉE)
+       ================================================================== */
+    const dijCanvas = document.getElementById('dijkstraCanvas');
+    const ctxDij = dijCanvas.getContext('2d');
+    let nodesDij = [], edgesDij = []; 
+    let currentDijNode = null;
+    let settledDij = new Set();
+    let isAnimatingDij = false;
+    let dijkstraFullHistory = []; // Historique pour le tableau
+
+    function initDijkstraGraph() {
+        const data = generateGraphData(dijCanvas.width, dijCanvas.height, true);
+        nodesDij = data.nodes;
+        edgesDij = data.edgesObj;
+        populateDijkstraSelectors();
+        resetDijkstraAnimation();
+    }
+
+    // Remplissage des menus déroulants
+    function populateDijkstraSelectors() {
+        const startSel = document.getElementById('dijkstraStart');
+        const endSel = document.getElementById('dijkstraEnd');
+        startSel.innerHTML = ""; endSel.innerHTML = "";
+        
+        nodesDij.forEach(n => {
+            startSel.add(new Option(n.label, n.id));
+            endSel.add(new Option(n.label, n.id));
+        });
+        
+        if(nodesDij.length > 0) {
+            startSel.selectedIndex = 0;
+            endSel.selectedIndex = nodesDij.length - 1;
+        }
+    }
+
+    function regenerateDijkstra() { if(isAnimatingDij) return; initDijkstraGraph(); }
+
+    function drawDijkstra() {
+        ctxDij.clearRect(0,0, dijCanvas.width, dijCanvas.height);
+        edgesDij.forEach(e => {
+            const n1 = nodesDij.find(n => n.id === e.u);
+            const n2 = nodesDij.find(n => n.id === e.v);
+            if(n1 && n2) {
+                ctxDij.beginPath(); ctxDij.moveTo(n1.x, n1.y); ctxDij.lineTo(n2.x, n2.y);
+                ctxDij.strokeStyle = '#aaa'; ctxDij.stroke();
+                const mx = (n1.x + n2.x)/2, my = (n1.y + n2.y)/2;
+                ctxDij.fillStyle = '#c0392b'; ctxDij.beginPath(); ctxDij.arc(mx, my, 10, 0, 2*Math.PI); ctxDij.fill();
+                ctxDij.fillStyle = '#fff'; ctxDij.font = 'bold 12px Arial'; ctxDij.textAlign = 'center'; ctxDij.textBaseline = 'middle';
+                ctxDij.fillText(e.w, mx, my);
+            }
+        });
+        nodesDij.forEach(n => {
+            ctxDij.beginPath(); ctxDij.arc(n.x, n.y, 25, 0, 2*Math.PI);
+            if(n.id === currentDijNode) ctxDij.fillStyle = '#e74c3c';
+            else if(settledDij.has(n.id)) ctxDij.fillStyle = '#27ae60';
+            else ctxDij.fillStyle = '#fff';
+            ctxDij.strokeStyle = '#333'; ctxDij.fill(); ctxDij.stroke();
+            ctxDij.fillStyle = (n.id === currentDijNode || settledDij.has(n.id)) ? '#fff' : '#333';
+            ctxDij.font = 'bold 14px Arial'; ctxDij.fillText(n.label, n.x, n.y - 8);
+            const dText = (n.dist === Infinity) ? "∞" : n.dist;
+            ctxDij.font = '12px Arial'; ctxDij.fillText("d=" + dText, n.x, n.y + 10);
+        });
+    }
+
+    async function startDijkstra() {
+        if(isAnimatingDij) return;
+        isAnimatingDij = true;
+        
+        const startId = parseInt(document.getElementById('dijkstraStart').value);
+        const endId = parseInt(document.getElementById('dijkstraEnd').value);
+
+        nodesDij.forEach(n => { n.dist = Infinity; n.prev = null; });
+        settledDij.clear();
+        currentDijNode = null;
+        dijkstraFullHistory = []; // Reset historique
+
+        const startNodeObj = nodesDij.find(n => n.id === startId);
+        startNodeObj.dist = 0;
+        
+        let unvisited = new Set(nodesDij.map(n => n.id));
+        const status = document.getElementById('dijkstraStatus');
+
+        while(unvisited.size > 0) {
+            // Sélection du sommet avec min distance
+            let minNodeId = null, minDist = Infinity;
+            unvisited.forEach(id => {
+                const node = nodesDij.find(n => n.id === id);
+                if(node.dist < minDist) { minDist = node.dist; minNodeId = id; }
+            });
+
+            if(minNodeId === null) break; // Plus de sommets accessibles
+
+            currentDijNode = minNodeId;
+            const currentNodeObj = nodesDij.find(n => n.id === minNodeId);
+            
+            status.textContent = `Traitement de ${currentNodeObj.label} (dist: ${minDist})`;
+            drawDijkstra();
+            await new Promise(r => setTimeout(r, 600));
+
+            // Relâchement des voisins
+            let stepUpdates = [];
+            const neighborsEdges = edgesDij.filter(e => e.u === minNodeId || e.v === minNodeId);
+            
+            for(let edge of neighborsEdges) {
+                let targetId = (edge.u === minNodeId) ? edge.v : edge.u;
+                if(unvisited.has(targetId)) {
+                    let targetNode = nodesDij.find(n => n.id === targetId);
+                    let newDist = currentNodeObj.dist + edge.w;
+                    
+                    if(newDist < targetNode.dist) {
+                        targetNode.dist = newDist;
+                        targetNode.prev = minNodeId;
+                        stepUpdates.push(targetId); // Marquer pour le rouge dans le tableau
+                        drawDijkstra();
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+                }
+            }
+
+            // Snapshot pour le tableau
+            dijkstraFullHistory.push({
+                fixedNode: minNodeId,
+                distances: nodesDij.map(n => n.dist),
+                updates: stepUpdates
+            });
+
+            unvisited.delete(minNodeId);
+            settledDij.add(minNodeId);
+            currentDijNode = null;
+            
+            if(minNodeId === endId) break; // Arrêt une fois la destination fixée
+        }
+
+        status.textContent = "Dijkstra terminé.";
+        drawDijkstra();
+        isAnimatingDij = false;
+
+        // Reconstruction du chemin
+        let path = [];
+        let curr = endId;
+        const targetNode = nodesDij.find(n => n.id === endId);
+        if(targetNode.dist !== Infinity) {
+            while(curr !== null && curr !== undefined) {
+                path.unshift(curr);
+                let n = nodesDij.find(x => x.id === curr);
+                curr = n.prev;
+                if(curr === startId) { path.unshift(startId); break; }
+            }
+        }
+
+        // Affichage du tableau Popup
+        setTimeout(() => {
+            showModal('Dijkstra', dijkstraFullHistory, {
+                start: startId,
+                end: endId,
+                path: path,
+                totalDist: targetNode.dist,
+                nodes: nodesDij
+            });
+        }, 500);
+    }
+
+    function resetDijkstraAnimation() {
+        if(isAnimatingDij) {
+            isAnimatingDij = false;
+            setTimeout(() => { resetDijData(); }, 100);
+        } else { resetDijData(); }
+    }
+    function resetDijData() {
+        nodesDij.forEach(n => { n.dist = Infinity; n.prev = null; });
+        settledDij.clear(); currentDijNode = null;
+        drawDijkstra();
+        document.getElementById('dijkstraStatus').textContent = "";
+    }
+
+    /* ==================================================================
+       DRAG & DROP
+       ================================================================== */
+    function setupDraggableCanvas(canvas, getNodesFn, drawFn) {
+        let isDragging = false;
+        let draggedNode = null;
+        let offsetX, offsetY;
+        const HIT_RADIUS = 25;
+
+        canvas.addEventListener('mousedown', (evt) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = evt.clientX - rect.left;
+            const mouseY = evt.clientY - rect.top;
+            const currentNodes = getNodesFn();
+
+            for (let i = currentNodes.length - 1; i >= 0; i--) {
+                const node = currentNodes[i];
+                if ((mouseX - node.x)**2 + (mouseY - node.y)**2 < HIT_RADIUS**2) {
+                    isDragging = true; draggedNode = node;
+                    offsetX = mouseX - node.x; offsetY = mouseY - node.y;
+                    break;
+                }
+            }
+        });
+        canvas.addEventListener('mousemove', (evt) => {
+            if (!isDragging || !draggedNode) return;
+            const rect = canvas.getBoundingClientRect();
+            draggedNode.x = (evt.clientX - rect.left) - offsetX;
+            draggedNode.y = (evt.clientY - rect.top) - offsetY;
+            drawFn();
+        });
+        const stop = () => { isDragging = false; draggedNode = null; };
+        canvas.addEventListener('mouseup', stop);
+        canvas.addEventListener('mouseleave', stop);
+    }
+
+    window.onload = () => {
+        initBFSGraph();      
+        initColorGraph();    
+        initDijkstraGraph(); 
+        setupDraggableCanvas(canvasBFS, () => nodesBFS, drawGraphBFS);
+        setupDraggableCanvas(colorCanvas, () => nodesColor, drawColorGraph);
+        setupDraggableCanvas(dijCanvas, () => nodesDij, drawDijkstra);
+    };
+function showNotationDefinition() {
+    const modal = document.getElementById('resultModal');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+
+    title.textContent = "Notation Mathématique : G = (V, E)";
+    
+    body.innerHTML = `
+        <div style="line-height: 1.1; color: #2c3e50;">
+            <p>Cette expression est la notation mathématique standard pour définir un graphe de manière formelle. Voici la décomposition de chaque élément :</p>
+            
+            <ul style="list-style-type: none; padding-left: 0;">
+                <li style="margin-bottom: 10px;">
+                    <strong style="color: var(--primary);">1. Le symbole \( G \) :</strong><br>
+                    C’est simplement le nom donné au <strong>Graphe</strong>. On utilise généralement des lettres majuscules pour nommer l'objet global.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong style="color: var(--primary);">2. Le symbole \( V \) (pour <em>Vertices</em>) :</strong><br>
+                    Il représente l'ensemble des <strong>sommets</strong> (ou nœuds) du graphe. En français, on utilise parfois \( S \) (pour Sommets). 
+                    C'est un ensemble fini de points. <br>
+                    <code style="background:#eee; padding:2px 5px;">Exemple : \( V = \{A, B, C, D\} \)</code>
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong style="color: var(--primary);">3. Le symbole \( E \) (pour <em>Edges</em>) :</strong><br>
+                    Il représente l'ensemble des <strong>arêtes</strong> (ou liens) qui relient les sommets entre eux. En français, on utilise parfois \( A \) (pour Arêtes).
+                    Une arête est définie par une paire de sommets. <br>
+                    <code style="background:#eee; padding:2px 5px;">Exemple : \( e = \{A, B\} \)</code>
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong style="color: var(--primary);">4. La structure \( (V, E) \) :</strong><br>
+                    L'écriture entre parenthèses signifie que le graphe est un <strong>couple d'objets</strong> : pour exister, un graphe a besoin d'un groupe de points (\( V \)) et d'une règle décrivant comment ils sont connectés (\( E \)).
+                </li>
+            </ul>
+
+            <div style="background-color: #f8f9fa; border-left: 4px solid var(--success); padding: 15px; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: var(--success);">Exemple concret</h4>
+                <p>Imaginons un petit réseau social de 3 personnes :<br>
+                <strong>\( V \) (Sommets) :</strong> {Alice, Bob, Charles}<br>
+                <strong>\( E \) (Arêtes) :</strong> {(Alice, Bob), (Bob, Charles)}</p>
+                <p><em>Ici, le graphe \( G = (V, E) \) nous dit qu'Alice est connectée à Bob, et Bob à Charles, mais qu'Alice et Charles ne sont pas connectés directement.</em></p>
+            </div>
+
+            <h4 style="color: var(--secondary);">Pourquoi cette notation est-elle utile ?</h4>
+            <p>Elle permet de travailler sur les graphes de manière abstraite selon la nature de \( E \) :</p>
+            <ul>
+                <li>Si \( E \) contient des <strong>couples ordonnés</strong> \( (u, v) \), on parle de <strong>graphe orienté</strong> (les flèches ont un sens).</li>
+                <li>Si \( E \) contient des <strong>paires non ordonnées</strong> \( \{u, v\} \), on parle de <strong>graphe non-orienté</strong> (la relation est réciproque).</li>
+            </ul>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+    
+    // Déclenche le rendu MathJax pour les nouvelles formules injectées
+    if (window.MathJax) {
+        MathJax.typesetPromise([body]);
+    }
+}
+function showCopyright() {
+        const content = `
+            <div style="text-align:center; padding:10px;">
+                <h2 style="color:var(--primary); margin-bottom:10px;">📜 Droits d'auteur & À propos</h2>
+                <p style="font-size:1.2rem; font-weight:bold; color:#1e293b;">Analyseur de Graphes Expert - v2.2</p>
+                <div style="margin:20px auto; width:60px; height:3px; background:#e2e8f0; border-radius:3px;"></div>
+                
+                <p style="color:#475569; max-width:600px; margin:auto; line-height:1.6;">
+                    Ce logiciel interactif est conçu pour l'enseignement et l'apprentissage de la <strong>Théorie des Graphes</strong>.
+                    Il permet la simulation visuelle d'algorithmes complexes tels que Dijkstra, Welsh-Powell et la détection de cycles Eulériens.
+<br>
+		    <strong>Auteur : Yann Merdy</strong> (yann.merdy@gmail.com) - Décembre 2025<br>
+
+Licence d'Utilisation Non Commerciale.<br>
+Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, Yann Merdy.<br>
+
+<strong>Conditions :</strong><br>
+Utilisation Privée et Éducative (Autorisée) : Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code et son contenu uniquement à des fins personnelles, éducatives et non lucratives.<br>
+Utilisation Commerciale (Interdite) : Toute utilisation, distribution, intégration ou reproduction du code ou du contenu (total ou partiel) à des fins commerciales, lucratives ou professionnelles est strictement interdite sans un accord écrit préalable et explicite de l'auteur.<br>
+Attribution : Toute reproduction ou modification doit conserver la mention de l'auteur originale (Yann Merdy) et la présente notice de droits d'auteur.
+Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez contacter l'auteur à l'adresse indiquée ci-dessus.
+                </p>
+
+                <div style="display:flex; justify-content:center; gap:15px; margin:25px 0;">
+                    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; flex:1; max-width:250px;">
+                        <strong style="display:block; margin-bottom:5px; color:var(--secondary);">🛠️ Technologies</strong>
+                        <ul style="padding-left:0; list-style:none; font-size:0.9rem; color:#64748b; margin:0;">
+                            <li>HTML5 Canvas</li>
+                            <li>Vanilla JavaScript</li>
+                            <li>MathJax (Rendu LaTeX)</li>
+                        </ul>
+                    </div>
+                     <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; flex:1; max-width:250px;">
+                        <strong style="display:block; margin-bottom:5px; color:var(--secondary);">⚖️ Licence</strong>
+                        <p style="font-size:0.9rem; color:#64748b; margin:0;">
+                            Usage libre à des fins pédagogiques.<br>
+                            Tous droits réservés.
+                        </p>
+                    </div>
+                </div>
+                
+                <p style="font-size:0.85rem; color:#94a3b8; margin-top:20px;">© 2025 - Outil de Simulation Mathématique</p>
+                <button class="btn btn-primary" style="margin:20px auto 0;" onclick="closeModal()">Fermer</button>
+            </div>
+        `;
+        openModal(content);
+    }
+/* ==================================================================
+       FONCTION CRÉDITS (À AJOUTER)
+       ================================================================== */
+    function showCopyright() {
+        const modal = document.getElementById('resultModal');
+        const title = document.getElementById('modalTitle');
+        const body = document.getElementById('modalBody');
+
+        // 1. Définir le titre
+        title.innerText = "Crédits & Informations";
+        
+        // 2. Injecter le contenu HTML (Technologies et Licence)
+        body.innerHTML = `
+            <div style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center; text-align:center;">
+	<h2 style="color:var(--primary); margin-bottom:10px;">📜 Droits d'auteur & À propos</h2>
+                <p style="font-size:1.2rem; font-weight:bold; color:#1e293b;">Analyseur de Graphes Expert - v2.2</p>
+                <div style="margin:20px auto; width:60px; height:3px; background:#e2e8f0; border-radius:3px;"></div>
+                
+                <p style="color:#475569; max-width:600px; margin:auto; line-height:1.6;">
+                    Ce logiciel interactif est conçu pour l'enseignement et l'apprentissage de la <strong>Théorie des Graphes</strong>.
+                    Il permet la simulation visuelle d'algorithmes complexes tels que Dijkstra, Welsh-Powell...
+<br>
+		    <strong>Auteur : Yann Merdy</strong> (yann.merdy@gmail.com) - Décembre 2025<br>
+
+Licence d'Utilisation Non Commerciale.<br>
+Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, Yann Merdy.<br>
+
+<strong>Conditions :</strong><br>
+Utilisation Privée et Éducative (Autorisée) : Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code et son contenu uniquement à des fins personnelles, éducatives et non lucratives.<br>
+Utilisation Commerciale (Interdite) : Toute utilisation, distribution, intégration ou reproduction du code ou du contenu (total ou partiel) à des fins commerciales, lucratives ou professionnelles est strictement interdite sans un accord écrit préalable et explicite de l'auteur.<br>
+Attribution : Toute reproduction ou modification doit conserver la mention de l'auteur originale (Yann Merdy) et la présente notice de droits d'auteur.
+Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez contacter l'auteur à l'adresse indiquée ci-dessus.
+                </p>
+
+                <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; flex:1; max-width:250px;">
+                    <strong style="display:block; margin-bottom:5px; color:var(--secondary);">🛠️ Technologies</strong>
+                    <ul style="padding-left:0; list-style:none; font-size:0.9rem; color:#64748b; margin:0;">
+                        <li>HTML5 Canvas</li>
+                        <li>Vanilla JavaScript</li>
+                        <li>MathJax (Rendu LaTeX)</li>
+                    </ul>
+                </div>
+                
+                <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; flex:1; max-width:250px;">
+                    <strong style="display:block; margin-bottom:5px; color:var(--secondary);">⚖️ Licence</strong>
+                    <p style="font-size:0.9rem; color:#64748b; margin:0;">
+                        Usage libre à des fins pédagogiques.<br>
+                        Tous droits réservés.
+                    </p>
+                </div>
+            </div>
+            
+            <p style="font-size:0.85rem; color:#94a3b8; margin-top:20px; text-align:center;">© 2025 - Outil de Simulation Mathématique</p>
+        `;
+        
+        // 3. Afficher la modale (en mode flex pour le centrage)
+        modal.style.display = "flex";
+    }
+
+    // Assurez-vous que la fonction de fermeture existe également
+    function closeModal() {
+        document.getElementById('resultModal').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyseur de Graphes Expert - v2.2 (Avec Crédits)</title>
+    
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb; --secondary: #1e40af; --accent: #3b82f6;
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+            --bg: #f8fafc; --panel: #ffffff; --text: #1e293b;
+            --border: #e2e8f0; --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        
+        .toolbar { 
+            display: flex; flex-wrap: wrap; gap: 8px; background: var(--panel); padding: 15px; 
+            border-radius: 12px 12px 0 0; border: 1px solid var(--border); border-bottom: none;
+            justify-content: center; align-items: center;
+            position: relative; z-index: 50;
+        }
+
+        canvas { 
+            background: #fff; border: 1px solid var(--border); border-radius: 0 0 12px 12px; 
+            cursor: crosshair; max-width: 100%; display: block; box-shadow: var(--shadow);
+            position: relative; z-index: 1;
+        }
+
+        .btn { padding: 10px 14px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-purple { background: #8b5cf6; color: white; }
+        .btn-dark { background: #1e293b; color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Style spécifique pour le toggle Orienté */
+        .mode-switch {
+            display: flex; align-items: center; background: #e2e8f0; border-radius: 20px; padding: 3px; cursor: pointer; position: relative; margin-right: 10px;
+        }
+        .mode-option {
+            padding: 6px 12px; border-radius: 18px; font-size: 0.8rem; font-weight: bold; z-index: 2; transition: color 0.3s;
+        }
+        .mode-active { color: white; }
+        .mode-inactive { color: #64748b; }
+        .mode-slider {
+            position: absolute; top: 3px; left: 3px; width: 50%; height: calc(100% - 6px);
+            background: var(--secondary); border-radius: 18px; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); z-index: 1;
+        }
+
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .modal-content { background-color: white; margin: 2% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; }
+        .close-modal { position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; cursor: pointer; color: #64748b; }
+
+        .dijkstra-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.85rem; }
+        .dijkstra-table th { background: #f1f5f9; padding: 10px; border: 1px solid var(--border); }
+        .dijkstra-table td { padding: 8px; border: 1px solid var(--border); text-align: center; }
+        .cell-fixed { background: #dcfce7; font-weight: bold; color: #166534; }
+        .cell-update { color: var(--primary); font-weight: bold; }
+        .cell-path-final { background: #fee2e2 !important; color: #b91c1c !important; font-weight: 800 !important; border: 2px solid #ef4444 !important; }
+        .path-highlight { color: #b91c1c; font-weight: bold; text-decoration: underline; font-size: 1.2rem; }
+
+        .step-desc { margin-bottom: 15px; padding: 15px; background: #fff; border: 1px solid #e2e8f0; border-left: 5px solid var(--accent); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .step-title { font-weight: 700; color: var(--secondary); display: block; margin-bottom: 5px; font-size: 1rem; }
+        .arg-box { font-size: 0.9rem; color: #475569; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #cbd5e1; line-height: 1.5; }
+        .arg-highlight { color: var(--danger); font-weight: 600; }
+        
+        .select-group { display: flex; align-items: center; gap: 5px; background: #f1f5f9; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; }
+        
+        .dropdown { position: relative; display: inline-block; }
+        
+        /* PONT INVISIBLE (Conservation du correctif) */
+        .dropdown-content {
+            display: none; 
+            position: absolute; 
+            background-color: white; 
+            min-width: 260px;
+            box-shadow: var(--shadow); 
+            border-radius: 8px; 
+            z-index: 100;
+            border: 1px solid var(--border);
+            padding: 8px; 
+            margin-top: 8px; 
+            left: 0;
+        }
+
+        .dropdown-content::before {
+            content: "";
+            position: absolute;
+            top: -15px;
+            left: 0;
+            width: 100%;
+            height: 15px;
+            background: transparent;
+        }
+
+        .dropdown:hover .dropdown-content { display: block; }
+        
+        .dropdown-item { padding: 10px; font-size: 0.85rem; border-radius: 4px; cursor: pointer; color: var(--text); transition: background 0.2s; }
+        .dropdown-item:hover { background: #f1f5f9; }
+        
+        .checkbox-list { max-height: 200px; overflow-y: auto; padding: 5px; border-top: 1px solid #eee; margin-top: 5px; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; padding: 5px; cursor: pointer; border-radius: 4px; }
+        .checkbox-item:hover { background: #f8fafc; }
+        .checkbox-list::-webkit-scrollbar { width: 6px; }
+        .checkbox-list::-webkit-scrollbar-track { background: #f1f1f1; }
+        .checkbox-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .checkbox-list::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .quick-select { display: flex; gap: 10px; padding: 4px 8px; font-size: 0.75rem; color: var(--primary); }
+        .quick-select span { cursor: pointer; font-weight: 600; }
+        .quick-select span:hover { text-decoration: underline; }
+
+        .flashcard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 10px; }
+        .flashcard { background-color: transparent; width: 100%; height: 220px; perspective: 1000px; cursor: pointer; }
+        .flashcard-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+        .flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; border-radius: 12px; box-sizing: border-box; }
+        .flashcard-front { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .flashcard-back { background-color: white; color: var(--text); transform: rotateY(180deg); border: 2px solid var(--primary); overflow-y: auto; }
+        .flashcard-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; }
+        .flashcard-icon { font-size: 3rem; margin-bottom: 15px; opacity: 0.8; }
+        .flashcard-def { font-size: 0.95rem; line-height: 1.5; }
+        .flashcard-cond { margin-top: 10px; padding: 8px; background: #fff1f2; color: #be123c; border-radius: 6px; font-size: 0.85rem; border-left: 3px solid #be123c; width: 100%; text-align: left; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div class="mode-switch" onclick="toggleDirection()">
+            <div class="mode-slider" id="modeSlider"></div>
+            <div class="mode-option mode-active" id="optNonOriented">Non-Orienté</div>
+            <div class="mode-option mode-inactive" id="optOriented">Orienté ➔</div>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-primary">➕ Nouveau Graphe ▾</button>
+            <div class="dropdown-content">
+                <div class="dropdown-item" onclick="generateRandomGraph()">
+                    <b>(1) Aléatoire complet</b><br>
+                    <small>Génère sommets, arêtes et poids.</small>
+                </div>
+                <div class="dropdown-item" onclick="clearGraph()">
+                    <b>(2) Création Manuelle</b><br>
+                    <small>Cliquez pour sommets, liez pour arêtes.</small>
+                </div>
+            </div>
+        </div>
+
+        <div style="width: 1px; height: 25px; background: #e2e8f0; margin: 0 10px;"></div>
+        
+        <button class="btn btn-outline" onclick="randomizeWeights()">🎲 Poids</button>
+        <button class="btn btn-outline" onclick="resetColors()">🔄 Couleurs</button>
+        
+        <div class="select-group">
+            <div class="dropdown" style="margin-right:5px;">
+                <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem;">🚩 Étapes</button>
+                <div class="dropdown-content" style="min-width: 180px;">
+                    <div class="quick-select">
+                        <span onclick="toggleAllWaypoints(true)">Tous</span> | 
+                        <span onclick="toggleAllWaypoints(false)">Aucun</span>
+                    </div>
+                    <div class="checkbox-list" id="waypoints-list">
+                        <small style="color:#64748b; padding:5px;">Aucun sommet</small>
+                    </div>
+                </div>
+            </div>
+            Dijkstra: <select id="startNode"></select> → <select id="endNode"></select>
+            <button class="btn btn-primary" id="btn-dijkstra" onclick="runDijkstraManager()">💡 Dijkstra</button>
+        </div>
+        
+        <button class="btn btn-purple" onclick="runColoring()">🌈 Coloration</button>
+        <button class="btn btn-success" onclick="analyzeFeatures()">🔍 Analyse Expert</button>
+        <button class="btn btn-warning" onclick="showMatrixSolution()">🔢 Matrice</button>
+        
+        <button class="btn btn-dark" onclick="openGlossaryCards()">📖 Flashcards</button>
+        
+        <button class="btn btn-outline" onclick="showCopyright()">© Crédits</button>
+        
+        <button class="btn btn-danger" onclick="clearGraph()">🗑️ Reset</button>
+    </div>
+
+    <canvas id="mainCanvas" width="1000" height="500"></canvas>
+    <div id="status-bar" style="text-align: center; font-size: 0.85rem; color: #64748b; margin-top: 5px;">
+        Astuces : Cliquez pour un sommet | Reliez 2 sommets pour une arête | <b>Double-cliquez une arête pour changer son poids</b>
+    </div>
+</div>
+
+<div id="solutionModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+    let graph = { nodes: [], edges: [] };
+    let selectedNodeIdx = null;
+    let animatingNode = null;
+    let highlightedEdges = [];
+    let finalPathEdges = [];
+    let isDragging = false;
+    let isDirected = false; 
+
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const palette = ["#ef4444", "#10b981", "#8b5cf6", "#f59e0b", "#06b6d4", "#ec4899", "#71717a"];
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // --- GESTION DU MODE ORIENTÉ ---
+    function toggleDirection() {
+        isDirected = !isDirected;
+        const slider = document.getElementById('modeSlider');
+        const optNO = document.getElementById('optNonOriented');
+        const optO = document.getElementById('optOriented');
+
+        if (isDirected) {
+            slider.style.transform = "translateX(100%)";
+            optNO.classList.replace('mode-active', 'mode-inactive');
+            optO.classList.replace('mode-inactive', 'mode-active');
+        } else {
+            slider.style.transform = "translateX(0)";
+            optNO.classList.replace('mode-inactive', 'mode-active');
+            optO.classList.replace('mode-active', 'mode-inactive');
+        }
+        
+        finalPathEdges = [];
+        draw();
+    }
+
+    const glossaryTerms = [
+        { t: "Boucle", i: "➿", d: "Arête dont les deux extrémités sont confondues sur le même sommet.", c: "Ajoute 2 au degré (Non-orienté) ou 1 in/1 out (Orienté)." },
+        { t: "Graphe Connexe", i: "🔗", d: "Graphe où il existe au moins une chaîne entre n'importe quelle paire de sommets.", c: "En orienté, on parle de connexité forte si u->v ET v->u sont possibles pour tout couple." },
+        { t: "Graphe Complet ($K_n$)", i: "🕸️", d: "Graphe simple où chaque sommet est relié à TOUS les autres sommets.", c: "Non-orienté : $n(n-1)/2$ arêtes. Orienté : chaque paire a 2 arcs (aller-retour)." },
+        { t: "Chaîne Eulérienne", i: "✍️", d: "Parcours qui emprunte chaque arête du graphe exactement une fois.", c: "Orienté : Pour chaque sommet, degré entrant = degré sortant (sauf départ/arrivée)." },
+        { t: "Cycle Eulérien", i: "⭕", d: "Chaîne eulérienne dont le sommet de départ et le sommet d'arrivée sont identiques.", c: "Orienté : Degré entrant = Degré sortant pour TOUS les sommets." },
+        { t: "Nombre Chromatique", i: "🎨", d: "Nombre minimal de couleurs nécessaires pour colorer les sommets sans adjacence identique.", c: "Généralement calculé sur le graphe non-orienté sous-jacent." }
+    ];
+
+    function openGlossaryCards() {
+        let html = `<h2>📖 Flashcards de Révision</h2><p style="text-align:center; color:#64748b;">Cliquez sur une carte pour voir la définition.</p><div class="flashcard-grid">`;
+        glossaryTerms.forEach((item, index) => {
+            html += `
+            <div class="flashcard" onclick="this.classList.toggle('flipped')">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <div class="flashcard-icon">${item.i}</div>
+                        <div class="flashcard-title">${item.t}</div>
+                    </div>
+                    <div class="flashcard-back">
+                        <div class="flashcard-title" style="font-size:1.1rem; color:var(--primary);">${item.t}</div>
+                        <div class="flashcard-def">${item.d}</div>
+                        <div class="flashcard-cond"><strong>Condition :</strong> ${item.c}</div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+        openModal(html);
+    }
+    
+    // NOUVELLE FONCTION POUR AFFICHER LES DROITS D'AUTEUR
+    function showCopyright() {
+        const content = `
+            <div style="text-align:center; padding:10px;">
+                <h2 style="color:var(--primary); margin-bottom:10px;">📜 Droits d'auteur & À propos</h2>
+                <p style="font-size:1.2rem; font-weight:bold; color:#1e293b;">Analyseur de Graphes Expert - v2.2</p>
+                <div style="margin:20px auto; width:60px; height:3px; background:#e2e8f0; border-radius:3px;"></div>
+                
+                <p style="color:#475569; max-width:600px; margin:auto; line-height:1.6;">
+                    Ce logiciel interactif est conçu pour l'enseignement et l'apprentissage de la <strong>Théorie des Graphes</strong>.
+                    Il permet la simulation visuelle d'algorithmes complexes tels que Dijkstra, Welsh-Powell et la détection de cycles Eulériens.
+<br>
+		    <strong>Auteur : Yann Merdy</strong> (yann.merdy@gmail.com) - Décembre 2025<br>
+
+Licence d'Utilisation Non Commerciale.<br>
+Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, Yann Merdy.<br>
+
+<strong>Conditions :</strong><br>
+Utilisation Privée et Éducative (Autorisée) : Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code et son contenu uniquement à des fins personnelles, éducatives et non lucratives.<br>
+Utilisation Commerciale (Interdite) : Toute utilisation, distribution, intégration ou reproduction du code ou du contenu (total ou partiel) à des fins commerciales, lucratives ou professionnelles est strictement interdite sans un accord écrit préalable et explicite de l'auteur.<br>
+Attribution : Toute reproduction ou modification doit conserver la mention de l'auteur originale (Yann Merdy) et la présente notice de droits d'auteur.
+Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez contacter l'auteur à l'adresse indiquée ci-dessus.
+                </p>
+
+                <div style="display:flex; justify-content:center; gap:15px; margin:25px 0;">
+                    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; flex:1; max-width:250px;">
+                        <strong style="display:block; margin-bottom:5px; color:var(--secondary);">🛠️ Technologies</strong>
+                        <ul style="padding-left:0; list-style:none; font-size:0.9rem; color:#64748b; margin:0;">
+                            <li>HTML5 Canvas</li>
+                            <li>Vanilla JavaScript</li>
+                            <li>MathJax (Rendu LaTeX)</li>
+                        </ul>
+                    </div>
+                     <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; flex:1; max-width:250px;">
+                        <strong style="display:block; margin-bottom:5px; color:var(--secondary);">⚖️ Licence</strong>
+                        <p style="font-size:0.9rem; color:#64748b; margin:0;">
+                            Usage libre à des fins pédagogiques.<br>
+                            Tous droits réservés.
+                        </p>
+                    </div>
+                </div>
+                
+                <p style="font-size:0.85rem; color:#94a3b8; margin-top:20px;">© 2025 - Outil de Simulation Mathématique</p>
+                <button class="btn btn-primary" style="margin:20px auto 0;" onclick="closeModal()">Fermer</button>
+            </div>
+        `;
+        openModal(content);
+    }
+
+    // --- GESTION DES CLICS & SAISIE DE POIDS ---
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const clickedIdx = graph.nodes.findIndex(n => Math.hypot(n.x-x, n.y-y) < 22);
+        
+        if(clickedIdx === -1) {
+            graph.nodes.push({ x, y, label: alphabet[graph.nodes.length % 26], color: null, tempDist: '∞' });
+            updateUI();
+        } else {
+            if(selectedNodeIdx === clickedIdx) {
+                let weight = prompt("Poids de la boucle ?", "1");
+                graph.edges.push({ u: clickedIdx, v: clickedIdx, w: parseInt(weight) || 1 });
+            } else if(selectedNodeIdx !== null) {
+                let exists = false;
+                if(isDirected) {
+                    exists = graph.edges.some(e => e.u === selectedNodeIdx && e.v === clickedIdx);
+                } else {
+                    exists = graph.edges.some(e => (e.u === selectedNodeIdx && e.v === clickedIdx) || (e.v === selectedNodeIdx && e.u === clickedIdx));
+                }
+
+                if(!exists) {
+                    let weight = prompt(`Poids de l'arête ${graph.nodes[selectedNodeIdx].label} ${isDirected ? '➔' : '-'} ${graph.nodes[clickedIdx].label} ?`, "1");
+                    graph.edges.push({ u: selectedNodeIdx, v: clickedIdx, w: parseInt(weight) || 1 });
+                }
+                selectedNodeIdx = null;
+            } else {
+                selectedNodeIdx = clickedIdx;
+                isDragging = true;
+            }
+        }
+        draw();
+    });
+
+    canvas.addEventListener('dblclick', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        let minD = Infinity;
+        let targetEdge = null;
+        
+        graph.edges.forEach(edge => {
+            const n1 = graph.nodes[edge.u], n2 = graph.nodes[edge.v];
+            let tx, ty;
+            
+            const isBidirectional = isDirected && graph.edges.some(other => other.u === edge.v && other.v === edge.u && other !== edge);
+            if (isBidirectional) {
+                const angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
+                const offset = 12;
+                const midX = (n1.x + n2.x) / 2;
+                const midY = (n1.y + n2.y) / 2;
+                tx = midX + offset * Math.sin(angle);
+                ty = midY - offset * Math.cos(angle);
+            } else {
+                tx = (n1.x + n2.x) / 2;
+                ty = (n1.y + n2.y) / 2;
+            }
+
+            const dist = Math.hypot(tx - x, ty - y);
+            if (dist < 20 && dist < minD) {
+                minD = dist;
+                targetEdge = edge;
+            }
+        });
+
+        if (targetEdge) {
+             let newW = prompt("Modifier le poids :", targetEdge.w);
+             if(newW !== null) targetEdge.w = parseInt(newW) || targetEdge.w;
+             draw();
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging && selectedNodeIdx !== null) {
+            const rect = canvas.getBoundingClientRect();
+            graph.nodes[selectedNodeIdx].x = e.clientX - rect.left;
+            graph.nodes[selectedNodeIdx].y = e.clientY - rect.top;
+            draw();
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => isDragging = false);
+
+    function drawArrow(ctx, fromX, fromY, toX, toY, radius) {
+        const headlen = 10;
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+        const endX = toX - radius * Math.cos(angle);
+        const endY = toY - radius * Math.sin(angle);
+        const startX = fromX + radius * Math.cos(angle);
+        const startY = fromY + radius * Math.sin(angle);
+
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.lineTo(endX - headlen * Math.cos(angle - Math.PI / 6), endY - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headlen * Math.cos(angle + Math.PI / 6), endY - headlen * Math.sin(angle + Math.PI / 6));
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        graph.edges.forEach(e => {
+            const n1 = graph.nodes[e.u], n2 = graph.nodes[e.v];
+            const isAnimating = highlightedEdges.includes(e);
+            const isFinal = finalPathEdges.includes(e);
+
+            ctx.beginPath();
+            if (isAnimating) { ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 4; }
+            else if (isFinal) { ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 6; }
+            else { ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 2; }
+
+            let textX, textY;
+
+            if(e.u === e.v) {
+                ctx.arc(n1.x, n1.y - 25, 20, 0, Math.PI * 2);
+                textX = n1.x; textY = n1.y - 50;
+                ctx.stroke();
+            } else {
+                const isBidirectional = isDirected && graph.edges.some(other => other.u === e.v && other.v === e.u);
+                
+                if (isBidirectional) {
+                    const angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
+                    const offset = 12; 
+                    const offX = offset * Math.sin(angle);
+                    const offY = -offset * Math.cos(angle);
+                    const startX = n1.x + offX;
+                    const startY = n1.y + offY;
+                    const endX = n2.x + offX;
+                    const endY = n2.y + offY;
+                    
+                    if (isDirected) drawArrow(ctx, startX, startY, endX, endY, 22);
+                    else { ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); } 
+
+                    textX = (startX + endX)/2; 
+                    textY = (startY + endY)/2 - 5;
+                    ctx.stroke();
+                } else {
+                    if(isDirected) drawArrow(ctx, n1.x, n1.y, n2.x, n2.y, 22);
+                    else { ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); }
+                    textX = (n1.x+n2.x)/2; textY = (n1.y+n2.y)/2 - 5;
+                    ctx.stroke();
+                }
+            }
+
+            ctx.fillStyle = isAnimating ? "#f59e0b" : (isFinal ? "#b91c1c" : "#64748b");
+            ctx.font = isFinal ? "bold 15px Inter" : "bold 13px Inter";
+            ctx.fillText(e.w, textX, textY);
+        });
+
+        graph.nodes.forEach((n, i) => {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 22, 0, Math.PI*2);
+            if(animatingNode === i) ctx.fillStyle = "#f59e0b";
+            else if(selectedNodeIdx === i) ctx.fillStyle = "#cbd5e1";
+            else ctx.fillStyle = n.color || "#2563eb";
+            ctx.fill();
+            ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 14px Inter";
+            ctx.fillText(n.label, n.x, n.y + 5);
+            ctx.font = "10px Inter"; 
+            if(n.tempDist && n.tempDist !== '∞') {
+                ctx.fillStyle = "black";
+                ctx.fillText(n.tempDist, n.x, n.y - 28);
+            }
+        });
+    }
+
+    // --- GESTIONNAIRE DE DIJKSTRA ---
+    async function runDijkstraManager() {
+        if(graph.nodes.length < 2) return;
+        finalPathEdges = [];
+        const btn = document.getElementById('btn-dijkstra');
+        btn.disabled = true;
+        
+        const startIdx = parseInt(document.getElementById('startNode').value);
+        const endIdx = parseInt(document.getElementById('endNode').value);
+        
+        const checkboxes = document.querySelectorAll('.waypoint-checkbox:checked');
+        let waypoints = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        waypoints = waypoints.filter(idx => idx !== startIdx && idx !== endIdx);
+
+        if(waypoints.length === 0) {
+            await runSingleDijkstra(startIdx, endIdx, true);
+        } else {
+            await runMultiStageDijkstra(startIdx, endIdx, waypoints);
+        }
+        
+        btn.disabled = false;
+        draw();
+    }
+
+    async function runMultiStageDijkstra(start, end, waypoints) {
+        let bestOrder = null;
+        let minTotalDist = Infinity;
+        
+        const getPermutations = (arr) => {
+            if (arr.length <= 1) return [arr];
+            return arr.flatMap((v, i) => getPermutations(arr.filter((_, j) => j !== i)).map(p => [v, ...p]));
+        };
+        
+        const perms = getPermutations(waypoints);
+        
+        const getDist = (u, v) => {
+            let d = Array(graph.nodes.length).fill(Infinity);
+            let unvisited = new Set(graph.nodes.map((_, i) => i));
+            d[u] = 0;
+            while(unvisited.size > 0) {
+                let curr = null;
+                unvisited.forEach(i => { if(curr===null || d[i]<d[curr]) curr=i; });
+                if(!curr && curr !== 0) break; 
+                if(d[curr]===Infinity) break;
+                unvisited.delete(curr);
+                if(curr === v) return d[v];
+                
+                graph.edges.forEach(e => {
+                    let neighbor = null;
+                    if (e.u === curr) neighbor = e.v;
+                    else if (!isDirected && e.v === curr) neighbor = e.u;
+                    
+                    if(neighbor!==null && unvisited.has(neighbor)) {
+                        let alt = d[curr]+e.w;
+                        if(alt<d[neighbor]) d[neighbor]=alt;
+                    }
+                });
+            }
+            return d[v];
+        };
+
+        for(let p of perms) {
+            let currentDist = getDist(start, p[0]);
+            for(let i=0; i<p.length-1; i++) currentDist += getDist(p[i], p[i+1]);
+            currentDist += getDist(p[p.length-1], end);
+            
+            if(currentDist < minTotalDist) {
+                minTotalDist = currentDist;
+                bestOrder = p;
+            }
+        }
+        
+        if(minTotalDist === Infinity) {
+            alert("Impossible de relier tous les points demandés (graphe non connexe ou orientation bloquante).");
+            return;
+        }
+
+        let sequence = [start, ...bestOrder, end];
+        let fullHtml = `<h2>🌍 Circuit Optimisé : ${sequence.map(i=>graph.nodes[i].label).join(' → ')}</h2>`;
+        
+        for(let i=0; i<sequence.length-1; i++) {
+            let u = sequence[i];
+            let v = sequence[i+1];
+            fullHtml += `<div style="background:#f8fafc; border:1px solid #e2e8f0; padding:10px; margin-bottom:15px; border-radius:8px;">`;
+            fullHtml += `<h3 style="margin:0 0 10px 0; color:#1e40af;">Étape ${i+1} : ${graph.nodes[u].label} → ${graph.nodes[v].label}</h3>`;
+            
+            let segmentResult = await runSingleDijkstra(u, v, false); 
+            fullHtml += segmentResult.html;
+            fullHtml += `</div>`;
+            await new Promise(r => setTimeout(r, 800));
+        }
+        
+        fullHtml += `<div class="step-desc" style="border-left-color:#ef4444; background:#fff1f1;">
+            🏁 <b>Distance Totale Cumulée : ${minTotalDist}</b>
+        </div>`;
+        
+        openModal(fullHtml);
+    }
+
+    async function runSingleDijkstra(startIdx, endIdx, openModalDirectly) {
+        let dist = Array(graph.nodes.length).fill(Infinity);
+        let prev = Array(graph.nodes.length).fill(null);
+        let prevEdge = Array(graph.nodes.length).fill(null); 
+        
+        let unvisited = new Set(graph.nodes.map((_, i) => i));
+        let history = []; 
+
+        dist[startIdx] = 0;
+        if(openModalDirectly) graph.nodes.forEach(n => n.tempDist = '∞');
+        graph.nodes[startIdx].tempDist = '0';
+
+        while(unvisited.size > 0) {
+            let u = null;
+            unvisited.forEach(i => { if(u === null || dist[i] < dist[u]) u = i; });
+            if(u === null || dist[u] === Infinity) break;
+
+            animatingNode = u;
+            if(openModalDirectly) document.getElementById('status-bar').innerText = `Analyse de ${graph.nodes[u].label}...`;
+            draw();
+            await new Promise(r => setTimeout(r, 400)); 
+
+            let stepData = { fixedNode: u, distances: [...dist], updates: [] };
+            unvisited.delete(u);
+            
+            if(u === endIdx) { history.push(stepData); break; }
+
+            for(let edge of graph.edges) {
+                let v = null;
+                if(edge.u === u) v = edge.v; 
+                else if(!isDirected && edge.v === u) v = edge.u; 
+
+                if(v !== null && unvisited.has(v)) {
+                    highlightedEdges.push(edge); draw();
+                    await new Promise(r => setTimeout(r, 150));
+                    let alt = dist[u] + edge.w;
+                    if(alt < dist[v]) {
+                        dist[v] = alt;
+                        prev[v] = u;
+                        prevEdge[v] = edge; 
+                        graph.nodes[v].tempDist = alt;
+                        stepData.updates.push(v);
+                        draw();
+                    }
+                    highlightedEdges = [];
+                }
+            }
+            history.push(stepData);
+        }
+
+        let pathIndices = [];
+        let pathLabels = [];
+        for(let c = endIdx; c !== null; c = prev[c]) {
+            pathIndices.push(c);
+            pathLabels.unshift(graph.nodes[c].label);
+            if(prevEdge[c]) {
+                finalPathEdges.push(prevEdge[c]);
+            }
+        }
+        if(dist[endIdx] !== Infinity && pathLabels.length === 0) pathLabels.push(graph.nodes[startIdx].label);
+
+        let tableHtml = "";
+        if(openModalDirectly) tableHtml += `<h2>⚖️ Résumé Dijkstra : <span style="color:#ef4444">${graph.nodes[startIdx].label} → ${graph.nodes[endIdx].label}</span></h2>`;
+        
+        tableHtml += `<table class="dijkstra-table"><tr><th>Sommet choisi</th>`;
+        graph.nodes.forEach(n => tableHtml += `<th>${n.label}</th>`);
+        tableHtml += `</tr>`;
+
+        history.forEach((step) => {
+            let isFixedInFinalPath = pathIndices.includes(step.fixedNode);
+            tableHtml += `<tr><td class="cell-fixed ${isFixedInFinalPath ? 'cell-path-final' : ''}"><b>${graph.nodes[step.fixedNode].label}</b></td>`;
+            graph.nodes.forEach((_, i) => {
+                let val = step.distances[i] === Infinity ? '∞' : step.distances[i];
+                let isUpdated = step.updates.includes(i);
+                let isFinalPathCell = (i === step.fixedNode && isFixedInFinalPath);
+                tableHtml += `<td class="${isUpdated ? 'cell-update' : ''} ${isFinalPathCell ? 'cell-path-final' : ''}">${val}</td>`;
+            });
+            tableHtml += `</tr>`;
+        });
+        tableHtml += `</table>`;
+        
+        if(dist[endIdx] !== Infinity) {
+            tableHtml += `<div style="font-size:0.9rem; color:#166534;">✅ Sous-total : <b>${dist[endIdx]}</b> (Chemin : ${pathLabels.join('→')})</div>`;
+        } else {
+            tableHtml += `<div style="color:red;">❌ Pas de chemin.</div>`;
+        }
+
+        animatingNode = null; 
+        if(openModalDirectly) {
+            document.getElementById('status-bar').innerText = "";
+            openModal(tableHtml + `<br><div class="step-desc" style="border-left-color:#ef4444; background:#fff1f1;">🏁 Total : <b>${dist[endIdx]}</b></div>`);
+        }
+        
+        return { html: tableHtml, dist: dist[endIdx] };
+    }
+
+    // --- ANALYSE EXPERT COMPLÈTE ---
+    function analyzeFeatures() {
+        if(graph.nodes.length === 0) return;
+        const n = graph.nodes.length;
+        const m = graph.edges.length;
+
+        let degrees = Array(n).fill(0);
+        let inDeg = Array(n).fill(0);
+        let outDeg = Array(n).fill(0);
+        let loops = 0;
+
+        graph.edges.forEach(e => {
+            if(e.u === e.v) { 
+                loops++; 
+                inDeg[e.u]++; outDeg[e.u]++;
+                degrees[e.u] += 2;
+            } else {
+                outDeg[e.u]++; inDeg[e.v]++;
+                degrees[e.u]++; degrees[e.v]++;
+            }
+        });
+
+        let isConnexe = true;
+        let connexeArg = "";
+        let componentsCount = 0; 
+
+        if (!isDirected) {
+            let visited = new Set();
+            let comps = [];
+            for(let i=0; i<n; i++) {
+                if(!visited.has(i)) {
+                    let c = []; let q = [i]; visited.add(i);
+                    while(q.length) {
+                        let u = q.shift(); c.push(graph.nodes[u].label);
+                        graph.edges.forEach(e => {
+                            let v = (e.u===u)?e.v : (e.v===u)?e.u : null;
+                            if(v!==null && !visited.has(v)) { visited.add(v); q.push(v); }
+                        });
+                    }
+                    comps.push(c);
+                }
+            }
+            componentsCount = comps.length;
+            isConnexe = (comps.length === 1);
+            connexeArg = isConnexe ? "Le graphe est connexe (en un seul morceau)." : `Graphe fragmenté en ${comps.length} composantes connexes.`;
+        } else {
+            let stronglyConnected = true;
+            for(let start=0; start<n; start++) {
+                let visited = new Set([start]);
+                let q = [start];
+                while(q.length) {
+                    let u = q.shift();
+                    graph.edges.forEach(e => {
+                        if(e.u === u && !visited.has(e.v)) { visited.add(e.v); q.push(e.v); }
+                    });
+                }
+                if(visited.size !== n) { stronglyConnected = false; break; }
+            }
+            isConnexe = stronglyConnected;
+            connexeArg = isConnexe ? "Graphe <b>Fortement Connexe</b> : Tout sommet peut atteindre tous les autres." : "Le graphe n'est pas fortement connexe (certains chemins sont à sens unique ou rompus).";
+        }
+
+        let isComplet = false;
+        let completArg = "";
+        const maxEdges = isDirected ? n*(n-1) : (n*(n-1))/2;
+        
+        let existingPairs = new Set();
+        graph.edges.forEach(e => {
+            if(e.u !== e.v) existingPairs.add(`${e.u}-${e.v}`);
+            if(!isDirected && e.u !== e.v) existingPairs.add(`${e.v}-${e.u}`);
+        });
+        
+        let needed = 0;
+        for(let i=0; i<n; i++) for(let j=0; j<n; j++) if(i!==j) needed++;
+        
+        if (existingPairs.size === needed) {
+            isComplet = true;
+            completArg = `Chaque paire est reliée${isDirected ? " dans les deux sens" : ""}.`;
+        } else {
+            completArg = `Il possède ${graph.edges.filter(e=>e.u!==e.v).length} arêtes sur les ${maxEdges} requises pour un $K_{${n}}$.`;
+        }
+
+        let eulerStatus = "Non Eulérien";
+        let eulerArg = "";
+
+        if (isDirected) {
+            let unbalanced = 0;
+            let startNode = 0, endNode = 0;
+            let balancedNodes = 0;
+            
+            for(let i=0; i<n; i++) {
+                if(inDeg[i] === outDeg[i]) balancedNodes++;
+                else unbalanced++;
+            }
+
+            if(unbalanced === 0) {
+                eulerStatus = "Cycle Eulérien (Possible)";
+                eulerArg = "Pour chaque sommet, d-(v) = d+(v).";
+            } else if (unbalanced === 2) {
+                let startCandidates = graph.nodes.filter((_,i) => outDeg[i] - inDeg[i] === 1);
+                let endCandidates = graph.nodes.filter((_,i) => inDeg[i] - outDeg[i] === 1);
+                
+                if(startCandidates.length === 1 && endCandidates.length === 1) {
+                    eulerStatus = "Chaîne Eulérienne (Possible)";
+                    eulerArg = `Départ: ${startCandidates[0].label}, Arrivée: ${endCandidates[0].label}.`;
+                } else {
+                    eulerArg = "Déséquilibre des degrés, mais pas de configuration Départ/Arrivée valide.";
+                }
+            } else {
+                eulerArg = `Plus de 2 sommets (${unbalanced}) ont des degrés entrants != sortants.`;
+            }
+        } else {
+            const oddNodes = degrees.filter(d => d % 2 !== 0).length;
+            if(!isConnexe && componentsCount > 1) { 
+                 eulerStatus = "Impossible"; eulerArg = "Graphe non connexe.";
+            } else {
+                if(oddNodes === 0) { eulerStatus = "Cycle Eulérien"; eulerArg = "Tous les sommets sont pairs."; }
+                else if(oddNodes === 2) { eulerStatus = "Chaîne Eulérienne"; eulerArg = "Exactement 2 sommets impairs."; }
+                else { eulerArg = `Il y a ${oddNodes} sommets impairs.`; }
+            }
+        }
+
+        let html = `<h2>🔍 Analyse Expert (${isDirected ? "Graphe Orienté" : "Graphe Non-Orienté"})</h2>`;
+        html += `<div class="step-desc"><span class="step-title">1. Connexité : ${isConnexe ? '<span style="color:var(--success)">OUI</span>' : '<span style="color:var(--danger)">NON</span>'}</span><div class="arg-box">${connexeArg}</div></div>`;
+        html += `<div class="step-desc"><span class="step-title">2. Densité / Complet : ${isComplet ? 'OUI' : 'NON'}</span><div class="arg-box">${completArg}</div></div>`;
+        html += `<div class="step-desc"><span class="step-title">3. Euler : ${eulerStatus}</span><div class="arg-box">${eulerArg}</div></div>`;
+        
+        let degreeStr = "";
+        if(isDirected) {
+            degreeStr = graph.nodes.map((n, i) => `${n.label}: <span style="color:#059669">in(${inDeg[i]})</span> / <span style="color:#d97706">out(${outDeg[i]})</span>`).join('<br>');
+        } else {
+            degreeStr = graph.nodes.map((n, i) => `${n.label}: d=${degrees[i]}`).join(', ');
+        }
+        
+        html += `<div class="step-desc"><span class="step-title">4. Degrés des sommets :</span><div class="arg-box">${degreeStr}</div></div>`;
+
+        openModal(html);
+    }
+
+    function generateRandomGraph() {
+        clearGraph();
+        const nbSommets = Math.floor(Math.random() * 5) + 5; 
+        for (let i = 0; i < nbSommets; i++) {
+            graph.nodes.push({ x: 150 + Math.random() * 700, y: 100 + Math.random() * 300, label: alphabet[i], color: null, tempDist: '∞' });
+        }
+        
+        const prob = isDirected ? 0.25 : 0.35; 
+        
+        for (let i = 0; i < nbSommets; i++) {
+            for (let j = 0; j < nbSommets; j++) {
+                if (i === j) continue;
+                if (isDirected) {
+                     if (Math.random() < prob) graph.edges.push({ u: i, v: j, w: Math.floor(Math.random() * 12) + 1 });
+                } else {
+                     if (j > i && Math.random() < prob) graph.edges.push({ u: i, v: j, w: Math.floor(Math.random() * 12) + 1 });
+                }
+            }
+        }
+        updateUI(); draw();
+    }
+
+    function runColoring() {
+        if(graph.nodes.length === 0) return;
+        let neighborCounts = graph.nodes.map((_, i) => {
+            let neighbors = new Set();
+            graph.edges.forEach(e => {
+                if(e.u === i && e.v !== i) neighbors.add(e.v);
+                if(e.v === i && e.u !== i) neighbors.add(e.u);
+            });
+            return { id: i, degree: neighbors.size };
+        }).sort((a, b) => b.degree - a.degree);
+
+        let assignedColors = {}; let colorCounter = 0;
+        
+        const areAdjacent = (n1, n2) => {
+            return graph.edges.some(e => (e.u === n1 && e.v === n2) || (e.v === n1 && e.u === n2));
+        };
+
+        neighborCounts.forEach(node => {
+            if (assignedColors[node.id] === undefined) {
+                let color = palette[colorCounter % palette.length];
+                assignedColors[node.id] = color; graph.nodes[node.id].color = color;
+                
+                neighborCounts.forEach(other => {
+                    if (assignedColors[other.id] === undefined && !areAdjacent(node.id, other.id)) {
+                        let compatible = true;
+                        for(let k in assignedColors) {
+                            if(assignedColors[k] === color && areAdjacent(parseInt(k), other.id)) {
+                                compatible = false; break;
+                            }
+                        }
+                        if(compatible) {
+                            assignedColors[other.id] = color; graph.nodes[other.id].color = color;
+                        }
+                    }
+                });
+                colorCounter++;
+            }
+        });
+        draw();
+    }
+
+    function showMatrixSolution() {
+        const n = graph.nodes.length; if(n === 0) return;
+        let mat = Array.from({length:n}, () => Array(n).fill(0));
+        
+        graph.edges.forEach(e => { 
+            mat[e.u][e.v] = 1; 
+            if(!isDirected && e.u !== e.v) mat[e.v][e.u] = 1; 
+        });
+
+        let html = `<h2>🔢 Matrice d'Adjacence (${isDirected ? "Orientée" : "Symétrique"})</h2>`;
+        html += `<table style="border-collapse:collapse; margin:auto;">`;
+        
+        html += `<tr><td style="background:#eee;"></td>`;
+        graph.nodes.forEach(n => html += `<td style="background:#eee; font-weight:bold; padding:5px;">${n.label}</td>`);
+        html += `</tr>`;
+
+        mat.forEach((row, idx) => {
+            html += `<tr><td style="background:#eee; font-weight:bold; padding:5px;">${graph.nodes[idx].label}</td>`;
+            html += row.map(v => `<td style="border:1px solid #ddd; padding:10px; font-weight:bold; color:${v? 'var(--primary)':'#ccc'}">${v}</td>`).join('');
+            html += `</tr>`;
+        });
+        openModal(html + "</table>");
+    }
+
+    function openModal(content) { document.getElementById('modalBody').innerHTML = content; document.getElementById('solutionModal').style.display = 'block'; MathJax.typeset(); }
+    function closeModal() { document.getElementById('solutionModal').style.display = 'none'; }
+    
+    function updateUI() {
+        const s = document.getElementById('startNode'), e = document.getElementById('endNode');
+        const sV = s.value, eV = e.value;
+        s.innerHTML = e.innerHTML = "";
+        graph.nodes.forEach((n, i) => { s.add(new Option(n.label, i)); e.add(new Option(n.label, i)); });
+        s.value = sV; e.value = eV;
+        
+        const wpContainer = document.getElementById('waypoints-list');
+        if(graph.nodes.length === 0) {
+            wpContainer.innerHTML = '<small style="color:#64748b; padding:5px;">Aucun sommet disponible</small>';
+        } else {
+            let html = "";
+            graph.nodes.forEach((n, i) => {
+                html += `<label class="checkbox-item"><input type="checkbox" class="waypoint-checkbox" value="${i}"> <span>${n.label}</span></label>`;
+            });
+            wpContainer.innerHTML = html;
+        }
+    }
+
+    function toggleAllWaypoints(checked) {
+        document.querySelectorAll('.waypoint-checkbox').forEach(cb => cb.checked = checked);
+    }
+    
+    function clearGraph() { graph = { nodes: [], edges: [] }; finalPathEdges = []; updateUI(); draw(); }
+    function randomizeWeights() { graph.edges.forEach(e => e.w = Math.floor(Math.random() * 15) + 1); finalPathEdges = []; draw(); }
+    function resetColors() { graph.nodes.forEach(n => { n.color = null; n.tempDist = ""; }); finalPathEdges = []; draw(); }
+</script>
+</body>
+</html>
