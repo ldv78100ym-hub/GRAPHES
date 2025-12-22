@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Markov : Fusion Ultime (Détails n=4)</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f9;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2980b9; text-align: center; border-bottom: 2px solid #e1e8ed; padding-bottom: 15px; }
+        
+        /* Contrôles */
+        .controls-area {
+            background: #eef2f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #dee2e6;
+        }
+        .mode-selector {
+            margin-bottom: 5px;
+            text-align: center;
+            width: 100%;
+        }
+        select {
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 2px solid #3498db;
+            background: white;
+            cursor: pointer;
+            width: 100%;
+            max-width: 450px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        .buttons-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        button:hover { background: #2980b9; transform: translateY(-2px); }
+        
+        .btn-refresh {
+            background-color: #e67e22;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-refresh:hover { background-color: #d35400; }
+
+        .btn-copyright {
+            background-color: #7f8c8d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-copyright:hover { background-color: #607d8b; }
+
+        /* Canvas Interactif */
+        canvas {
+            display: block;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 2px solid #3498db;
+            border-radius: 15px;
+            cursor: grab; /* Curseur main */
+        }
+        canvas:active { cursor: grabbing; } /* Curseur main fermée */
+
+        .canvas-hint {
+            text-align: center;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: -15px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .math-output {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 6px solid #3498db;
+            font-size: 1.2em;
+            text-align: center;
+            border-radius: 0 5px 5px 0;
+        }
+
+        /* Liste des questions */
+        .questions-section { margin-top: 40px; }
+        .question-item { 
+            margin-bottom: 15px; 
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            display: flex; 
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .question-item:hover { border-color: #3498db; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .btn-q-sol { background: #27ae60; font-size: 0.9em; padding: 10px 20px; }
+        .btn-q-sol:hover { background: #219150; }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 2% auto;
+            padding: 40px;
+            border-radius: 15px;
+            width: 85%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close { float: right; font-size: 35px; cursor: pointer; font-weight: bold; color: #aaa; }
+        .close:hover { color: #000; }
+
+        /* Styles Didactiques */
+        .didactic-section { margin-bottom: 25px; padding: 25px; border-radius: 8px; font-size: 1rem; position: relative; }
+        .strat { background: #eef7ff; border-left: 6px solid #3498db; }
+        .tools { background: #fff8e1; border-left: 6px solid #f1c40f; }
+        .appli { background: #f0fdf4; border-left: 6px solid #2ecc71; }
+        .concl { background: #fdf2f2; border-left: 6px solid #e74c3c; }
+        
+        .sec-title { 
+            font-weight: 800; text-transform: uppercase; color: #2c3e50; 
+            margin-bottom: 15px; display: block; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 5px; letter-spacing: 1px;
+        }
+        .tool-list { list-style-type: none; padding-left: 0; }
+        .tool-list li { margin-bottom: 10px; padding-left: 25px; position: relative; }
+        .tool-list li:before { content: "➤"; position: absolute; left: 0; color: #f1c40f; font-weight: bold; }
+        
+        .step-calc { background: white; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .calc-line { font-family: 'Courier New', monospace; color: #555; margin-bottom: 5px; display: block; word-wrap: break-word;}
+        
+        /* Style spécifique pour les étapes de calcul */
+        .gauss-step { border-left: 4px solid #9b59b6; background: #fbf6fd; padding: 15px; margin-top: 15px; border-radius: 4px; }
+        .iter-step { border-left: 4px solid #34495e; background: #f4f6f7; padding: 15px; margin-top: 15px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Simulateur Markov : Interactif & Détaillé</h1>
+    
+    <div class="controls-area">
+        <div class="mode-selector">
+            <label for="modeSelect" style="display:block; margin-bottom:5px; color:#7f8c8d;">Choisir le type d'exercice :</label>
+            <select id="modeSelect" onchange="initExercise()">
+                <option value="random">MODE 1 : Matrice Aléatoire (Convergence vers État Stable)</option>
+                <option value="structure">MODE 2 : Matrice Structurée M = aI + bJ (Fuite / Nilpotence)</option>
+            </select>
+        </div>
+        
+        <div class="buttons-group">
+            <span style="color:#7f8c8d; font-weight:bold; margin-right:10px;">Nb États :</span>
+            <button onclick="updateNodes(2)">2</button>
+            <button onclick="updateNodes(3)">3</button>
+            <button onclick="updateNodes(4)">4</button>
+        </div>
+
+        <div style="margin-top: 10px; width: 100%; display: flex; justify-content: center; gap: 15px;">
+            <button onclick="initExercise()" class="btn-refresh">
+                <span>🔄</span> Actualiser (Aléatoire)
+            </button>
+            <button onclick="showCopyright()" class="btn-copyright">
+                <span>©</span> Droits d'auteur
+            </button>
+        </div>
+    </div>
+
+    <div id="exercise-content">
+        <canvas id="markovCanvas" width="800" height="400"></canvas>
+        <p class="canvas-hint">💡 Astuce : Cliquez et glissez les sommets avec la souris pour organiser le graphe (Drag & Drop).</p>
+        
+        <div id="latex-matrix" class="math-output"></div>
+
+        <div class="questions-section">
+            <h3>Explorations Théoriques et Pratiques</h3>
+            <div id="questions-list"></div>
+        </div>
+    </div>
+</div>
+
+<div id="solutionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div id="solution-text"></div>
+    </div>
+</div>
+
+<script>
+    // --- VARIABLES GLOBALES ---
+    let currentMatrix = [];
+    let currentStates = [];
+    let initialVector = [];
+    let nodes = [];
+    let targetStepN = 5; 
+    let numStatesGlobal = 3;
+    let mode = 'random'; 
+    let paramA = 0.6;
+    let paramB = 0.4;
+
+    const canvas = document.getElementById('markovCanvas');
+    const ctx = canvas.getContext('2d');
+    const nodeRadius = 35;
+
+    // --- GESTION DRAG & DROP (Interactivité) ---
+    let isDragging = false;
+    let draggedNode = null;
+
+    canvas.addEventListener('mousedown', function(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        for (let node of nodes) {
+            let dx = mouseX - node.x; let dy = mouseY - node.y;
+            if (dx*dx + dy*dy < nodeRadius*nodeRadius) {
+                isDragging = true; draggedNode = node; canvas.style.cursor = 'grabbing'; break;
+            }
+        }
+    });
+
+    canvas.addEventListener('mousemove', function(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        if (isDragging && draggedNode) {
+            draggedNode.x = mouseX; draggedNode.y = mouseY; draw();
+        } else {
+            let hover = false;
+            for (let node of nodes) {
+                let dx = mouseX - node.x; let dy = mouseY - node.y;
+                if (dx*dx + dy*dy < nodeRadius*nodeRadius) { hover = true; break; }
+            }
+            canvas.style.cursor = hover ? 'grab' : 'default';
+        }
+    });
+
+    canvas.addEventListener('mouseup', function() { isDragging = false; draggedNode = null; canvas.style.cursor = 'grab'; });
+    canvas.addEventListener('mouseout', function() { isDragging = false; draggedNode = null; });
+
+
+    // --- INITIALISATION ---
+    function updateNodes(n) { numStatesGlobal = n; initExercise(); }
+
+    function initExercise() {
+        mode = document.getElementById('modeSelect').value;
+        currentStates = ["A", "B", "C", "D"].slice(0, numStatesGlobal);
+        
+        // Valeurs aléatoires
+        targetStepN = Math.floor(Math.random() * (7 - 4 + 1)) + 4; // Limité à 7 pour que l'affichage pas à pas reste lisible
+        let randA = Math.random() * 0.6 + 0.2; 
+        paramA = parseFloat(randA.toFixed(2));
+        paramB = parseFloat((1 - paramA).toFixed(2)); 
+
+        initialVector = new Array(numStatesGlobal).fill(0);
+        const randStart = Math.floor(Math.random() * numStatesGlobal);
+        initialVector[randStart] = 1;
+
+        if (mode === 'random') generateStochasticMatrix(numStatesGlobal);
+        else generateStructureMatrix(numStatesGlobal);
+
+        // Positions initiales en cercle
+        const centerX = canvas.width / 2; const centerY = canvas.height / 2; const radius = 150;
+        nodes = currentStates.map((label, i) => ({
+            x: centerX + radius * Math.cos(2 * Math.PI * i / numStatesGlobal - Math.PI / 2),
+            y: centerY + radius * Math.sin(2 * Math.PI * i / numStatesGlobal - Math.PI / 2),
+            label: label
+        }));
+
+        renderLatexMatrix();
+        generateQuestions();
+        draw();
+    }
+
+    function generateStochasticMatrix(n) {
+        currentMatrix = [];
+        for (let i = 0; i < n; i++) {
+            let row = Array.from({length: n}, () => Math.random() + 0.1);
+            let sum = row.reduce((a, b) => a + b, 0);
+            row = row.map(v => parseFloat((v / sum).toFixed(2)));
+            let diff = 1 - row.reduce((a, b) => a + b, 0);
+            row[n-1] = parseFloat((row[n-1] + diff).toFixed(2));
+            currentMatrix.push(row);
+        }
+    }
+
+    function generateStructureMatrix(n) {
+        currentMatrix = [];
+        for (let i = 0; i < n; i++) {
+            let row = new Array(n).fill(0);
+            row[i] = paramA; 
+            if (i < n - 1) row[i+1] = paramB; 
+            currentMatrix.push(row);
+        }
+    }
+
+    // --- DESSIN GRAPHIQUE ---
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        currentMatrix.forEach((row, i) => {
+            row.forEach((prob, j) => {
+                if (prob > 0) {
+                    if (i === j) drawSelfLoop(nodes[i], prob); else drawEdge(nodes[i], nodes[j], prob);
+                }
+            });
+        });
+        nodes.forEach((node, i) => {
+            ctx.beginPath(); ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2);
+            if(initialVector[i] === 1) ctx.fillStyle = "#fff8e1"; else ctx.fillStyle = "#fff"; 
+            ctx.shadowBlur = 5; ctx.shadowColor = "rgba(0,0,0,0.2)"; ctx.fill();
+            ctx.strokeStyle = "#3498db"; ctx.lineWidth = 3; ctx.stroke();
+            ctx.fillStyle = "#2c3e50"; ctx.font = "bold 16px Arial"; ctx.textAlign = "center";
+            ctx.fillText(node.label, node.x, node.y + 6);
+        });
+        if (mode === 'structure') {
+            let lastNode = nodes[nodes.length-1];
+            ctx.fillStyle = "#e74c3c"; ctx.font = "italic 12px Arial";
+            ctx.fillText("Fuite (" + (paramB*100).toFixed(0) + "%)", lastNode.x + 50, lastNode.y);
+        }
+    }
+
+    function drawEdge(n1, n2, prob) {
+        const angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
+        const cpX = (n1.x + n2.x) / 2 + Math.cos(angle + Math.PI/2) * 40;
+        const cpY = (n1.y + n2.y) / 2 + Math.sin(angle + Math.PI/2) * 40;
+        ctx.beginPath(); ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 1.5;
+        const startX = n1.x + Math.cos(angle) * nodeRadius; const startY = n1.y + Math.sin(angle) * nodeRadius;
+        const endX = n2.x - Math.cos(angle) * nodeRadius; const endY = n2.y - Math.sin(angle) * nodeRadius;
+        ctx.moveTo(startX, startY); ctx.quadraticCurveTo(cpX, cpY, endX, endY); ctx.stroke();
+        const arrowAngle = Math.atan2(endY - cpY, endX - cpX);
+        ctx.beginPath(); ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - 10 * Math.cos(arrowAngle - 0.4), endY - 10 * Math.sin(arrowAngle - 0.4));
+        ctx.lineTo(endX - 10 * Math.cos(arrowAngle + 0.4), endY - 10 * Math.sin(arrowAngle + 0.4));
+        ctx.fillStyle = "#95a5a6"; ctx.fill();
+        ctx.fillStyle = "#e67e22"; ctx.font = "bold 13px Arial"; ctx.fillText(prob, cpX, cpY);
+    }
+
+    function drawSelfLoop(node, prob) {
+        ctx.beginPath(); ctx.arc(node.x, node.y - nodeRadius, 18, 0, Math.PI * 2);
+        ctx.strokeStyle = "#95a5a6"; ctx.stroke();
+        ctx.fillStyle = "#e67e22"; ctx.font = "bold 13px Arial"; ctx.fillText(prob, node.x, node.y - nodeRadius - 22);
+    }
+
+    function renderLatexMatrix() {
+        let latex = (mode === 'structure') ? `M = ${paramA} I + ${paramB} J = ` : "M = ";
+        latex += "\\begin{pmatrix}" + currentMatrix.map(r => r.join(" & ")).join(" \\\\ ") + "\\end{pmatrix}";
+        document.getElementById('latex-matrix').innerHTML = `\\( ${latex} \\)`;
+        MathJax.typeset();
+    }
+
+
+    // --- SOLUTIONS DÉTAILLÉES ---
+
+    function generateQuestions() {
+        let labels = [];
+        if (mode === 'random') {
+            labels = ["Lecture de la matrice (Interprétation)", "Calcul de l'état suivant P1 (Prévision)", "Recherche de l'état stable (Long terme)", `Projection à l'étape n=${targetStepN} (Simulation)`, "Démonstration : Récurrence (Théorie)"];
+        } else {
+            labels = ["Structure de la matrice (Forme Algébrique)", "Calcul de l'état suivant P1 (Shift)", "Comportement limite (Fuite du système)", `Projection à l'étape n=${targetStepN} (Perte)`, "Démonstration : Binôme de Newton (Expert)"];
+        }
+        const div = document.getElementById('questions-list');
+        div.innerHTML = labels.map((label, i) => `
+            <div class="question-item">
+                <span><strong>${i === 4 ? 'Bonus Maths Expertes' : 'Question ' + (i+1)} :</strong> ${label}</span>
+                <button class="btn-q-sol" onclick="showDetailedSolution(${i})">Démonstration Complète</button>
+            </div>
+        `).join('');
+    }
+
+    function combinations(n, k) {
+        if (k < 0 || k > n) return 0;
+        let res = 1;
+        for (let i = 1; i <= k; i++) {
+            res = res * (n - (i - 1)) / i;
+        }
+        return res;
+    }
+    
+    // NOUVELLE FONCTION POUR LE COPYRIGHT
+    function showCopyright() {
+        const container = document.getElementById('solution-text');
+        container.innerHTML = `
+            <h2>Mentions Légales & Droits d'auteur</h2>
+	
+            <div class="didactic-section strat">
+		
+                <span class="sec-title">Information</span>
+		<p>📜 Droits d'auteur & À propos</p>
+		<p>Auteur : Yann Merdy (yann.merdy@gmail.com) - Décembre 2025</p>
+		<p>Licence d'Utilisation Non Commerciale.</p>
+                <p>Ce simulateur pédagogique de chaînes de Markov a été conçu pour illustrer les concepts de matrices de transition, de convergence et de comportement limite.</p>
+                <p>Il permet de visualiser graphiquement et analytiquement l'évolution des systèmes probabilistes.</p>
+            </div>
+            <div class="didactic-section tools">                
+		<p>Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, Yann Merdy.</p>
+		<p><strong>Conditions :</strong></p>
+		<p>Utilisation Privée et Éducative (Autorisée) : Vous êtes autorisé.e à utiliser, copier, modifier et distribuer ce code et son contenu uniquement à des fins personnelles, éducatives et non lucratives.</p>
+		<p>Utilisation Commerciale (Interdite) : Toute utilisation, distribution, intégration ou reproduction du code ou du contenu (total ou partiel) à des fins commerciales, lucratives ou professionnelles est strictement interdite sans un accord écrit préalable et explicite de l'auteur.</p>
+		<p>Attribution : Toute reproduction ou modification doit conserver la mention de l'auteur originale (Yann Merdy) et la présente notice de droits d'auteur. Pour toute demande d'utilisation commerciale ou de licence spécifique, veuillez contacter l'auteur à l'adresse indiquée ci-dessus.</p>
+            </div>`;
+        document.getElementById('solutionModal').style.display = "block";
+    }
+
+    function showDetailedSolution(index) {
+        const container = document.getElementById('solution-text');
+        let html = "";
+        
+        // --- Q1 ---
+        if (index === 0) {
+            if (mode === 'random') {
+                html = `<h2>1. Lecture de la Matrice (Cas Général)</h2><div class="didactic-section strat"><span class="sec-title">1. Stratégie</span><p>Lire ligne par ligne. Chaque ligne $i$ représente la distribution de probabilité partant de l'état $i$.</p></div><div class="didactic-section tools"><span class="sec-title">2. Outils</span><p>Coefficient \\(m_{ij} = P(X_{n+1}=j | X_n=i)\\).</p></div><div class="didactic-section appli"><span class="sec-title">3. Application</span><ul style="list-style:none;">${currentMatrix.map((row, i) => `<li><strong>De ${currentStates[i]} :</strong> ${row.map((v,j) => `vers ${currentStates[j]} (${(v*100).toFixed(0)}%)`).join(', ')}.</li>`).join('')}</ul></div><div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p>Matrice stochastique définie.</p></div>`;
+            } else { 
+                html = `<h2>1. Structure de la Matrice (\\(aI + bJ\\))</h2><div class="didactic-section strat"><span class="sec-title">1. Stratégie</span><p>Identifier la diagonale (rester) et la sur-diagonale (avancer).</p></div><div class="didactic-section tools"><span class="sec-title">2. Outils</span><p>\\(I\\) (Identité), \\(J\\) (Nilpotente).</p></div><div class="didactic-section appli"><span class="sec-title">3. Application</span><p>On lit : \\(a = ${paramA}\\) (sur la diagonale) et \\(b = ${paramB}\\) (juste au-dessus).</p></div><div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p>\\(M = ${paramA}I + ${paramB}J\\).</p></div>`;
+            }
+        }
+        
+        // --- Q2 : DÉTAIL ARITHMÉTIQUE ---
+        else if (index === 1) {
+            let p1 = multiplyVectorMatrix(initialVector, currentMatrix);
+            html = `
+            <h2>2. Calcul Détaillé de l'état suivant (\\(P_1\\))</h2>
+            <div class="didactic-section strat">
+                <span class="sec-title">1. Stratégie</span>
+                <p>On applique le produit vecteur-matrice : \\(P_1 = P_0 \\times M\\).</p>
+            </div>
+            <div class="didactic-section appli">
+                <span class="sec-title">3. Application (Calculs pas à pas)</span>
+                <p>État initial : \\(P_0 = [${initialVector.join(', ')}]\\)</p>
+                ${p1.map((val, j) => {
+                    let formulaParts = []; let numericParts = [];
+                    initialVector.forEach((v0, i) => {
+                        let mij = currentMatrix[i][j];
+                        formulaParts.push(`(P_0[${currentStates[i]}] \\times M_{${currentStates[i]},${currentStates[j]}})`);
+                        numericParts.push(`(${v0} \\times ${mij})`);
+                    });
+                    return `<div class="step-calc"><strong>Vers ${currentStates[j]} :</strong><br><span class="calc-line">${numericParts.join(' + ')}</span><span class="calc-line" style="color:#2ecc71; font-weight:bold;">= ${val}</span></div>`;
+                }).join('')}
+            </div>
+            <div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p><strong>\\(P_1 = [${p1.join(', ')}]\\)</strong>.</p></div>`;
+        }
+
+        // --- Q3 : DÉTAIL GAUSS (Modifié) ---
+        else if (index === 2) {
+            if (mode === 'random') {
+                const solutionData = solveLinearSystemWithSteps(currentMatrix);
+                let stepsHtml = solutionData.steps.map(s => `
+                    <div class="gauss-step">
+                        <strong>${s.title}</strong>
+                        \\[ ${s.latex} \\]
+                    </div>
+                `).join('');
+
+                html = `
+                <h2>3. État Stable (Résolution Détaillée par Gauss)</h2>
+                <div class="didactic-section strat"><span class="sec-title">1. Stratégie</span><p>On cherche \\(\\pi\\) invariant (\\(\\pi M = \\pi\\)) via le système homogène \\(\\pi(M - I) = 0\\), et la contrainte \\(\\sum \\pi_i = 1\\).</p></div>
+                <div class="didactic-section appli"><span class="sec-title">2. Exécution du Pivot de Gauss</span>${stepsHtml}</div>
+                <div class="didactic-section concl"><span class="sec-title">3. Résultat Final</span><div class="step-calc" style="text-align:center; font-weight:bold; font-size:1.3em;">\\(\\pi \\approx [${solutionData.res.map(x=>x.toFixed(4)).join(', ')}]\\)</div></div>`;
+            } else { 
+                html = `
+                <h2>3. Comportement Limite (Fuite du Système)</h2>
+                
+                <div class="didactic-section strat">
+                    <span class="sec-title">1. Analyse Spectrale</span>
+                    <p>Pour déterminer le comportement à long terme (\\(n \\to \\infty\\)), nous devons analyser les <strong>valeurs propres</strong> de la matrice \\(M\\).</p>
+                    <p>Si toutes les valeurs propres \\(\\lambda\\) vérifient \\(|\\lambda| < 1\\), alors la matrice converge vers la matrice nulle (0).</p>
+                </div>
+
+                <div class="didactic-section tools">
+                    <span class="sec-title">2. Observation de la Matrice</span>
+                    <p>La matrice \\(M\\) est <strong>triangulaire supérieure</strong> (seuls la diagonale et la sur-diagonale sont non nulles).</p>
+                    \\[ M = \\begin{pmatrix} a & b & 0 \\\\ 0 & a & b \\\\ 0 & 0 & a \\end{pmatrix} \\]
+                    <p>Dans ce cas, les valeurs propres sont simplement les coefficients diagonaux.</p>
+                </div>
+
+                <div class="didactic-section appli">
+                    <span class="sec-title">3. Vérification Numérique</span>
+                    <ul style="list-style:none;">
+                        <li><strong>Coefficient diagonal :</strong> \\(a = ${paramA}\\)</li>
+                        <li><strong>Condition de convergence :</strong> Est-ce que \\(|${paramA}| < 1\\) ? <strong style="color:#27ae60">OUI</strong>.</li>
+                    </ul>
+                    <p>Puisque la valeur propre unique \\(\\lambda = ${paramA}\\) est strictement inférieure à 1, la suite géométrique \\((${paramA})^n\\) tend vers 0.</p>
+                </div>
+
+                <div class="didactic-section concl">
+                    <span class="sec-title">4. Interprétation Physique</span>
+                    <p>Mathématiquement : \\( \\lim_{n \\to \\infty} M^n = 0 \\).</p>
+                    <p>Physiquement : À chaque étape, ou au bout du graphe, de la probabilité "fuit" (la somme des lignes n'est pas toujours 1, ou le dernier état ne boucle pas). Finalement, la probabilité que le système soit encore dans l'un des états actifs devient nulle.</p>
+                </div>
+                `;
+            }
+        }
+
+        // --- Q4 : SIMULATION COMPLÈTE N ÉTAPES (Entièrement Détaillée) ---
+        else if (index === 3) {
+            let vec = [...initialVector];
+            let stepsHtml = "";
+
+            stepsHtml += `<div class="didactic-section strat">
+                <span class="sec-title">1. Stratégie</span>
+                <p>Pour atteindre l'étape \\(n=${targetStepN}\\), nous devons calculer successivement \\(P_1, P_2, \\dots, P_{${targetStepN}}\\). Nous utilisons la relation de récurrence : \\(P_{k} = P_{k-1} \\times M\\).</p>
+            </div>
+            <div class="didactic-section appli">
+                <span class="sec-title">2. Exécution pas à pas</span>`;
+
+            // Boucle de calcul détaillé
+            for(let k=1; k<=targetStepN; k++) {
+                let prevVec = [...vec];
+                vec = multiplyVectorMatrix(vec, currentMatrix);
+
+                // Génération du détail mathématique pour l'étape k
+                let detailList = vec.map((val, j) => {
+                    // Construction chaîne : (v * m) + ...
+                    let calcStr = prevVec.map((v, i) => {
+                        let mVal = currentMatrix[i][j];
+                        return `(${v} \\times ${mVal})`;
+                    }).join(' + ');
+                    // CORRECTION MATHJAX ICI
+                    return `<li>Pour l'état ${currentStates[j]} : <br><span style="color:#7f8c8d; font-size:0.9em;">\\( ${calcStr} \\)</span> = <strong>${val}</strong></li>`;
+                }).join('');
+
+                stepsHtml += `
+                    <div class="iter-step">
+                        <strong>Étape ${k} (Calcul de \\(P_{${k}}\\) à partir de \\(P_{${k-1}}\\) ) :</strong>
+                        <p>On part de \\(P_{${k-1}} = [${prevVec.join(', ')}]\\).</p>
+                        <ul style="list-style-type: none; padding-left: 10px;">${detailList}</ul>
+                        <div style="text-align:center; margin-top:5px; border-top:1px solid #ddd; padding-top:5px;">
+                            \\(\\Rightarrow P_{${k}} = [${vec.join(', ')}]\\)
+                        </div>
+                    </div>`;
+            }
+            stepsHtml += `</div>`; // Fin section appli
+
+            stepsHtml += `<div class="didactic-section concl">
+                <span class="sec-title">3. Conclusion</span>
+                <p>Au bout de ${targetStepN} étapes, la distribution de probabilité est :</p>
+                <div class="step-calc" style="text-align:center; font-size:1.2em;">
+                    \\(P_{${targetStepN}} = [${vec.join(', ')}]\\)
+                </div>
+            </div>`;
+
+            html = `<h2>4. Projection détaillée à l'étape \\(n=${targetStepN}\\)</h2>` + stepsHtml;
+        }
+
+        // --- Q5 : DÉMONSTRATION COMPLÈTE (MATHS EXPERTES) ---
+        else if (index === 4) {
+            if (mode === 'random') {
+                html = `
+                <h2>5. Démonstration : Formule Explicite (Récurrence)</h2>
+                
+                <div class="didactic-section strat">
+                    <span class="sec-title">1. Objectif</span>
+                    <p>Nous cherchons à démontrer que pour tout entier naturel \\(n \\in \\mathbb{N}\\), l'état probabiliste \\(P_n\\) peut être calculé directement à partir de l'état initial \\(P_0\\) et de la matrice \\(M\\) par la formule :</p>
+                    <div class="step-calc" style="text-align:center; font-size:1.2em; border: 2px solid #3498db;">
+                        \\[ P_n = P_0 \\times M^n \\]
+                    </div>
+                </div>
+
+                <div class="didactic-section tools">
+                    <span class="sec-title">2. Rappels Théoriques</span>
+                    <ul class="tool-list">
+                        <li><strong>Définition d'une chaîne de Markov :</strong> L'état suivant ne dépend que de l'état actuel : \\( P_{n+1} = P_n \\times M \\).</li>
+                        <li><strong>Associativité :</strong> Le produit matriciel est associatif : \\((A \\times B) \\times C = A \\times (B \\times C)\\).</li>
+                        <li><strong>Convention :</strong> Toute matrice à la puissance 0 vaut l'identité : \\(M^0 = I\\).</li>
+                    </ul>
+                </div>
+
+                <div class="didactic-section appli">
+                    <span class="sec-title">3. DÉMONSTRATION PAR RÉCURRENCE</span>
+                    
+                    <div class="gauss-step" style="border-left-color: #27ae60;">
+                        <strong>Étape 1 : Initialisation (rang n=0)</strong>
+                        <p>Vérifions si la propriété est vraie pour \\(n=0\\).</p>
+                        <ul>
+                            <li><strong>Membre de gauche (Réalité) :</strong> \\(P_0\\) est l'état initial par définition.</li>
+                            <li><strong>Membre de droite (Formule) :</strong> \\(P_0 \\times M^0 = P_0 \\times I = P_0\\).</li>
+                        </ul>
+                        <p><em>Conclusion :</em> L'égalité est vérifiée au rang 0.</p>
+                    </div>
+
+                    <div class="iter-step">
+                        <strong>Étape 2 : Hérédité</strong>
+                        <p>Supposons que la propriété soit vraie pour un entier \\(k \\geq 0\\) fixé. C'est notre <strong>Hypothèse de Récurrence (HR)</strong> :</p>
+                        \\[ P_k = P_0 \\times M^k \\]
+                        <p>Nous devons démontrer qu'elle reste vraie au rang \\(k+1\\), c'est-à-dire arriver au résultat : \\( P_{k+1} = P_0 \\times M^{k+1} \\).</p>
+                        
+                        <hr style="border:0; border-top:1px dashed #bbb; margin:15px 0;">
+                        
+                        <p><strong>Détail du calcul algébrique :</strong></p>
+                        
+                        <p>1. Partons de la définition fondamentale de la suite (relation de récurrence) :</p>
+                        \\[ P_{k+1} = P_k \\times M \\]
+                        
+                        <p>2. Remplaçons \\(P_k\\) en utilisant notre Hypothèse de Récurrence (HR) :</p>
+                        \\[ P_{k+1} = (P_0 \\times M^k) \\times M \\]
+                        
+                        <p>3. Utilisons l'<strong>associativité</strong> du produit matriciel pour déplacer les parenthèses (étape clé) :</p>
+                        \\[ P_{k+1} = P_0 \\times (M^k \\times M) \\]
+                        
+                        <p>4. Appliquons les règles de puissance sur les matrices (\\(A^n \\times A^1 = A^{n+1}\\)) :</p>
+                        \\[ P_{k+1} = P_0 \\times M^{k+1} \\]
+                        
+                        <p style="color:#27ae60; font-weight:bold;">CQFD : La propriété est héréditaire.</p>
+                    </div>
+                </div>
+
+                <div class="didactic-section concl">
+                    <span class="sec-title">4. Conclusion Générale</span>
+                    <p>La propriété étant vraie au rang 0 et héréditaire à partir de tout rang, elle est vraie pour tout entier naturel \\(n\\).</p>
+                    <p>Cette démonstration valide l'utilisation du calcul de puissance de matrice (souvent via diagonalisation \\(M=PDP^{-1}\\)) pour prédire l'avenir lointain du système sans itérer manuellement.</p>
+                </div>`;
+            } else {
+                
+                // --- MODE STRUCTURE : EXPRESSION DE M^n ---
+                
+                let N = numStatesGlobal;
+                let a = paramA;
+                let b = paramB;
+                
+                // Construction dynamique de la chaîne LaTeX pour la somme
+                let sumLatex = "";
+                for(let k=0; k<N; k++) {
+                    let term = "";
+                    let matrixPart = (k===0) ? "I" : (k===1) ? "J" : `J^${k}`;
+                    let plusSign = (k > 0) ? " + " : "";
+
+                    // Coefficient binomial et puissances
+                    if (k === 0) {
+                        term = `(${a})^n`;
+                    } else if (k === 1) {
+                        term = `n (${a})^{n-1} (${b})`;
+                    } else {
+                        // Cas général k >= 2
+                        term = `\\binom{n}{${k}} (${a})^{n-${k}} (${b})^{${k}}`;
+                    }
+                    sumLatex += `${plusSign} ${term} ${matrixPart}`;
+                }
+
+                html = `
+                <h2>5. Démonstration : Expression de \\( M^n \\) (Binôme)</h2>
+                
+                <div class="didactic-section strat">
+                    <span class="sec-title">1. Contexte et Objectif</span>
+                    <p>Nous travaillons avec la matrice structurée \\( M = aI + bJ \\) où les valeurs générées sont :</p>
+                    <ul class="tool-list">
+                        <li>\\( a = ${a} \\)</li>
+                        <li>\\( b = ${b} \\)</li>
+                    </ul>
+                    <p>L'objectif est d'établir l'expression exacte de la matrice \\( M^n \\) pour tout \\( n \\) (gardé littéral), en fonction de ces valeurs et des puissances de \\( J \\).</p>
+                </div>
+
+                <div class="didactic-section tools">
+                    <span class="sec-title">2. Propriété de Nilpotence</span>
+                    <p>La matrice \\( J \\) est de taille \\( ${N} \\times ${N} \\). C'est une matrice de décalage (Shift).</p>
+                    <div class="gauss-step">
+                        <strong>Arrêt des puissances :</strong>
+                        <p>Les puissances de \\( J \\) s'annulent dès que l'exposant atteint la dimension de la matrice.</p>
+                        <p style="text-align:center; font-weight:bold; color:#c0392b; font-size:1.1em;">
+                            La valeur \\( k \\) pour laquelle \\( J^k = 0 \\) est \\( k = ${N} \\).
+                        </p>
+                        <p>Donc \\( J^{${N}} = 0 \\), \\( J^{${N+1}} = 0 \\), etc.</p>
+                    </div>
+                </div>
+
+                <div class="didactic-section appli">
+                    <span class="sec-title">3. Application de la Formule du Binôme</span>
+                    <p>Comme \\( I \\) et \\( J \\) commutent, nous appliquons Newton :</p>
+                    \\[ M^n = (aI + bJ)^n = \\sum_{k=0}^{n} \\binom{n}{k} a^{n-k} b^k J^k \\]
+                    <p>Grâce à la nilpotence (\\( J^{${N}}=0 \\)), la somme infinie (si \\(n\\) est grand) s'arrête en réalité à l'indice \\( k = ${N-1} \\). L'expression devient exacte et finie :</p>
+                    
+                    <div class="step-calc" style="padding:15px; border:2px solid #3498db;">
+                        <strong>Expression finale de \\( M^n \\) :</strong>
+                        \\[ M^n = ${sumLatex} \\]
+                    </div>
+                    <p>Cette formule est valide pour tout \\( n \\ge ${N-1} \\).</p>
+                </div>
+
+                <div class="didactic-section concl">
+                    <span class="sec-title">4. Interprétation</span>
+                    <p>Cette expression décompose l'évolution du système en une superposition de décalages pondérés :</p>
+                    <ul>
+                        <li>Le terme en \\( I \\) représente la probabilité de "rester sur place" partout.</li>
+                        <li>Le terme en \\( J \\) représente la diffusion vers l'état voisin immédiat.</li>
+                        <li>Le terme en \\( J^2 \\) (si existe) représente la diffusion à 2 sauts, etc.</li>
+                    </ul>
+                </div>`;
+            }
+        }
+
+        container.innerHTML = html;
+        document.getElementById('solutionModal').style.display = "block";
+        MathJax.typesetPromise();
+    }
+
+    // --- MOTEUR DE CALCUL GAUSS ---
+    function solveLinearSystemWithSteps(matrix) {
+        const n = matrix.length;
+        let steps = [];
+
+        let A = [];
+        let B = new Array(n).fill(0);
+
+        for (let j = 0; j < n; j++) { 
+            let row = [];
+            for (let i = 0; i < n; i++) {
+                let val = (i === j) ? matrix[i][j] - 1 : matrix[i][j];
+                row.push(val);
+            }
+            A.push(row);
+        }
+
+        A[n - 1] = new Array(n).fill(1);
+        B[n - 1] = 1;
+
+        steps.push({
+            title: "Mise en place de la matrice augmentée [A | B]",
+            latex: matrixToLatex(A, B)
+        });
+
+        for (let i = 0; i < n; i++) {
+            let pivotRow = i;
+            for (let k = i + 1; k < n; k++) {
+                if (Math.abs(A[k][i]) > Math.abs(A[pivotRow][i])) pivotRow = k;
+            }
+
+            if (pivotRow !== i) {
+                [A[i], A[pivotRow]] = [A[pivotRow], A[i]];
+                [B[i], B[pivotRow]] = [B[pivotRow], B[i]];
+                steps.push({
+                    title: `Échange des lignes L${i+1} et L${pivotRow+1}`,
+                    latex: matrixToLatex(A, B)
+                });
+            }
+
+            let pivot = A[i][i];
+            if (Math.abs(pivot) > 1e-10) {
+                for (let j = i; j < n; j++) A[i][j] /= pivot;
+                B[i] /= pivot;
+                steps.push({
+                    title: `Normalisation de la ligne L${i+1} (Pivot ${pivot.toFixed(2)})`,
+                    latex: matrixToLatex(A, B)
+                });
+
+                let eliminationOccurred = false;
+                for (let k = 0; k < n; k++) {
+                    if (k !== i) {
+                        let factor = A[k][i];
+                        if (Math.abs(factor) > 1e-10) {
+                            for (let j = i; j < n; j++) A[k][j] -= factor * A[i][j];
+                            B[k] -= factor * B[i];
+                            eliminationOccurred = true;
+                        }
+                    }
+                }
+                if(eliminationOccurred) {
+                    steps.push({
+                        title: `Annulation des coefficients colonne ${i+1}`,
+                        latex: matrixToLatex(A, B)
+                    });
+                }
+            }
+        }
+        return { res: B, steps: steps };
+    }
+
+    function matrixToLatex(A, B) {
+        let s = "\\left[\\begin{array}{" + "c".repeat(A.length) + "|c}";
+        for(let i=0; i<A.length; i++) {
+            s += A[i].map(x => Math.abs(x) < 0.0001 ? "0" : x.toFixed(2)).join(" & ") + " & " + B[i].toFixed(2) + " \\\\ ";
+        }
+        s += "\\end{array}\\right]";
+        return s;
+    }
+
+    function multiplyVectorMatrix(v, m) {
+        let res = new Array(m.length).fill(0);
+        for (let j = 0; j < m.length; j++) {
+            for (let i = 0; i < m.length; i++) res[j] += v[i] * m[i][j];
+        }
+        return res.map(x => parseFloat(x.toFixed(4)));
+    }
+    
+    function closeModal() { document.getElementById('solutionModal').style.display = "none"; }
+    window.onclick = (event) => { if (event.target == document.getElementById('solutionModal')) closeModal(); }
+    window.onload = initExercise;
+</script>
+</body>
+</html>
