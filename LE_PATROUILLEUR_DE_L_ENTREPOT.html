@@ -1,0 +1,2424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1.1 Le Patrouilleur de l'Entrepôt - Théorie des Graphes</title>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --accent: #f57c00;
+            --help: #0288d1;
+            --solution: #2e7d32;
+            --expert: #6a1b9a;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #212121;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px;
+        }
+        
+        header { 
+            text-align: center; 
+            padding: 80px 30px; 
+            background: linear-gradient(135deg, var(--primary), #3949ab, var(--expert)); 
+            color: white; 
+            border-radius: 0 0 60px 60px;
+            margin-bottom: 50px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.25);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.8em;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .difficulty-indicator {
+            font-size: 0.75em;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 5px;
+            margin-bottom: 12px;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+        .diff-1 { background: #e8f5e9; color: #2e7d32; }
+        .diff-2 { background: #fff3e0; color: #ef6c00; }
+        .diff-3 { background: #ffebee; color: #c62828; }
+        .diff-4 { background: #f3e5f5; color: #6a1b9a; }
+        .diff-5 { background: #212121; color: #ffffff; }
+
+        section { 
+            background: var(--card); 
+            padding: 40px; 
+            margin-bottom: 45px; 
+            border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-top: 6px solid var(--primary);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+        }
+
+        .scenario-label { 
+            color: var(--accent); 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            font-size: 0.9em;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .difficulty-selector {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 2px solid #e0e0e0;
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .diff-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #e0e0e0;
+            color: #666;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85em;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .diff-btn.active {
+            background: linear-gradient(135deg, var(--primary), #3949ab);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(26, 35, 126, 0.3);
+        }
+
+        .diff-btn:hover:not(.active) {
+            background: #d0d0d0;
+            transform: translateY(-2px);
+        }
+
+        .complexity-indicator {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .difficulty-content {
+            animation: fadeIn 0.5s ease;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tool-box {
+            background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%);
+            border-left: 5px solid #ffc107;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 0 15px 15px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .tool-title {
+            font-weight: bold;
+            color: #b71c1c;
+            display: block;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .method-step {
+            margin-bottom: 18px;
+            padding-left: 20px;
+            border-left: 4px solid var(--help);
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        .btn-group { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            margin: 30px 0; 
+        }
+        
+        button { 
+            padding: 16px 20px;
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            color: white; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95em;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-statement { background: linear-gradient(135deg, var(--primary), #3949ab); }
+        .btn-help { background: linear-gradient(135deg, var(--help), #0277bd); }
+        .btn-sol { background: linear-gradient(135deg, var(--solution), #388e3c); }
+        .btn-expert { background: linear-gradient(135deg, var(--expert), #7b1fa2); }
+        .btn-interactive { background: linear-gradient(135deg, #e91e63, #f06292); }
+        .btn-random { background: linear-gradient(135deg, #9c27b0, #ba68c8); }
+        .btn-copyright { background: linear-gradient(135deg, #607d8b, #78909c); }
+        
+        button:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(-2px);
+        }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; 
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: white; 
+            margin: 3% auto; 
+            padding: 45px;
+            border-radius: 25px; 
+            width: 90%; 
+            max-width: 900px;
+            position: relative; 
+            animation: slideUp 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            max-height: 90vh; 
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        @keyframes slideUp { 
+            from {transform: translateY(50px); opacity: 0} 
+            to {transform: translateY(0); opacity: 1} 
+        }
+        
+        .close { 
+            position: absolute; 
+            right: 30px; 
+            top: 20px; 
+            font-size: 35px; 
+            cursor: pointer; 
+            color: #999;
+            transition: all 0.3s;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #333;
+            transform: rotate(90deg);
+        }
+
+        .content-box { 
+            display: none; 
+            padding: 30px; 
+            margin-top: 25px; 
+            border-radius: 15px; 
+            border: 2px solid #eee; 
+            line-height: 1.9;
+            animation: slideIn 0.4s ease-out;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
+        }
+        
+        @keyframes slideIn { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .help-box { 
+            background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%); 
+            border-left: 6px solid var(--help); 
+        }
+        
+        .solution-box { 
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); 
+            border-left: 6px solid var(--solution); 
+        }
+        
+        .expert-box { 
+            background: linear-gradient(135deg, #f3e5f5 0%, #fce4ec 100%); 
+            border-left: 6px solid var(--expert); 
+        }
+
+        .canvas-container { 
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%); 
+            border: 3px dashed #ccc; 
+            border-radius: 15px; 
+            margin-top: 25px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        canvas { 
+            cursor: grab; 
+            display: block;
+            border-radius: 10px;
+            touch-action: none; /* Important pour le support tactile */
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        .canvas-hint { 
+            position: absolute; 
+            top: 15px; 
+            right: 20px; 
+            font-size: 0.85em; 
+            color: #666; 
+            pointer-events: none;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .progress-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s;
+        }
+
+        .progress-dot.active {
+            background: var(--primary);
+            transform: scale(1.3);
+        }
+
+        footer { 
+            text-align: center; 
+            padding: 60px; 
+            color: white; 
+            font-size: 0.95em; 
+            background: linear-gradient(135deg, var(--primary), var(--expert));
+            border-radius: 60px 60px 0 0;
+            margin-top: 50px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 50px 20px; }
+            h1 { font-size: 2em; }
+            section { padding: 25px; }
+            .modal-content { width: 95%; padding: 30px; }
+            .btn-group { grid-template-columns: 1fr; }
+            .difficulty-buttons { flex-direction: column; }
+            .diff-btn { min-width: 100%; }
+        }
+
+        .highlight { 
+            background: linear-gradient(120deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        ul, ol {
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .random-values-box {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #7b1fa2;
+        }
+
+        .current-values {
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #9c27b0;
+        }
+
+        .random-solution {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #2e7d32;
+        }
+
+        .graph-display {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .graph-canvas-container {
+            position: relative;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+
+        .graph-canvas {
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background: #f9f9f9;
+            touch-action: none; /* Important pour le support tactile */
+        }
+
+        .graph-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .legend-even { background: #2e7d32; }
+        .legend-odd { background: #c62828; }
+        .legend-edge { background: #666; width: 30px; height: 3px; border-radius: 2px; }
+
+        .solution-step {
+            margin-bottom: 25px;
+            padding: 15px;
+            border-left: 4px solid var(--solution);
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: var(--solution);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .theorem-box {
+            background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+            border-left: 5px solid #0288d1;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .theorem-title {
+            font-weight: bold;
+            color: #01579b;
+            margin-bottom: 10px;
+        }
+
+        .euler-formula {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px dashed #ccc;
+        }
+
+        .generation-info {
+            background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #3949ab;
+            font-size: 0.9em;
+        }
+        
+        .canvas-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-control-btn {
+            padding: 8px 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+        
+        .canvas-control-btn:hover {
+            background: #3949ab;
+            transform: translateY(-2px);
+        }
+        
+        .canvas-info {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .adaptive-solution {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #2e7d32;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .solution-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .solution-table th {
+            background: var(--solution);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .solution-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .solution-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .solution-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .path-display {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        
+        .possible-path {
+            color: var(--solution);
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .impossible-path {
+            color: #c62828;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .copyright-content {
+            padding: 30px;
+            line-height: 1.8;
+        }
+        
+        .copyright-content h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        
+        .copyright-content h4 {
+            color: var(--accent);
+            margin: 25px 0 15px 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        .copyright-content ul {
+            padding-left: 20px;
+            margin: 15px 0;
+        }
+        
+        .copyright-content li {
+            margin-bottom: 10px;
+            position: relative;
+            padding-left: 10px;
+        }
+        
+        .copyright-content li:before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .author-info {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e3f2fd 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .license-info {
+            background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e9 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid var(--solution);
+        }
+        
+        .restrictions-info {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #c62828;
+        }
+        
+        .contact-info {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .email-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .email-link:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <span class="badge">Théorie des Graphes - Situation 1.1</span>
+        <h1>🔐 Le Patrouilleur de l'Entrepôt</h1>
+        <p style="font-size: 1.2em; margin-top: 10px;">Problème de cycle eulérien dans un réseau de couloirs</p>
+        <div style="margin-top: 20px;">
+            <button class="btn-random" onclick="generateTrulyRandomValues()">
+                🎲 Générer un nouvel entrepôt ALÉATOIRE
+            </button>
+        </div>
+    </header>
+
+    <!-- SECTION PRINCIPALE -->
+    <section id="main-section">
+        <span class="scenario-label">🔐 Sécurité Privée - Mission d'Inspection</span>
+        <h2>Problème : Peut-on inspecter tous les couloirs sans répétition ?</h2>
+        
+        <div class="difficulty-selector">
+            <div class="difficulty-indicator diff-1">Niveau 1 : Initiation</div>
+            <div class="difficulty-buttons">
+                <button class="diff-btn active" data-diff="1" onclick="changeDifficulty(1)">★☆☆ Cycle Simple</button>
+                <button class="diff-btn" data-diff="2" onclick="changeDifficulty(2)">★★☆ Avec Diagonale</button>
+                <button class="diff-btn" data-diff="3" onclick="changeDifficulty(3)">★★★ Avec Salle Centrale</button>
+                <button class="diff-btn" data-diff="4" onclick="changeDifficulty(4)">★★★★ Multi-Étage</button>
+                <button class="diff-btn" data-diff="5" onclick="changeDifficulty(5)">★★★★★ Mega-Entrepôt</button>
+            </div>
+        </div>
+        
+        <!-- VALEURS ALÉATOIRES -->
+        <div class="random-values-box">
+            <h3>🎲 Configuration de l'Entrepôt Généré</h3>
+            <div class="generation-info">
+                <p><strong>⚠️ Attention :</strong> Cliquez sur "Générer une nouvelle configuration" pour créer un entrepôt ALÉATOIRE avec une structure différente !</p>
+                <p>La génération modifie le nombre de sommets, d'arêtes et leurs connections.</p>
+            </div>
+            <div class="current-values" id="randomValues">
+                <!-- Les valeurs aléatoires seront injectées ici -->
+                <p><strong>Entrepôt initial :</strong></p>
+                <ul>
+                    <li>Nombre de couloirs : 4</li>
+                    <li>Nombre de zones (sommets) : 4</li>
+                    <li>Degrés des sommets : A=2, B=2, C=2, D=2</li>
+                    <li>Type de graphe : Cycle C₄</li>
+                </ul>
+            </div>
+            <button class="btn-random" onclick="generateRandomValues()">
+                🔄 Générer une nouvelle configuration
+            </button>
+        </div>
+        
+        <!-- CONTENU DYNAMIQUE PAR NIVEAU -->
+        <div id="dynamic-content">
+            <div class="difficulty-content active">
+                <div class="complexity-indicator">Complexité : Simple cycle C₄, tous les sommets de degré 2</div>
+                <h3>Niveau 1 : Entrepôt Carré Simple</h3>
+                <p><em>Un agent de sécurité doit inspecter tous les couloirs d'un centre de stockage carré et revenir à sa borne de charge. Le plan forme un carré parfait avec 4 couloirs.</em></p>
+                
+                <div class="graph-display">
+                    <h4>📐 Représentation Graphique (Sommets déplaçables)</h4>
+                    <div class="graph-canvas-container">
+                        <canvas id="graphCanvas" class="graph-canvas" width="400" height="300"></canvas>
+                    </div>
+                    <div class="canvas-controls">
+                        <button class="canvas-control-btn" onclick="toggleDegreesOnStaticGraph()">
+                            💡 Afficher/Masquer les degrés
+                        </button>
+                        <button class="canvas-control-btn" onclick="resetStaticGraphPositions()">
+                            🔄 Réinitialiser positions
+                        </button>
+                    </div>
+                    <div class="canvas-info">
+                        💡 Astuce : Cliquez et déplacez les sommets pour réorganiser le graphe
+                    </div>
+                    <div class="graph-legend">
+                        <div class="legend-item">
+                            <div class="legend-color legend-even"></div>
+                            <span>Sommet degré pair</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-odd"></div>
+                            <span>Sommet degré impair</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-edge"></div>
+                            <span>Couloir (arête)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- BOUTONS D'INTERACTION -->
+        <div class="btn-group">
+            <button class="btn-statement" onclick="openModal('statementModal')">📋 Énoncé & Contexte</button>
+            <button class="btn-interactive" onclick="openInteractiveCanvas()">🎨 Mode Interactif</button>
+            <button class="btn-help" onclick="toggle('helpBox')">💡 Méthode d'Audit</button>
+            <button class="btn-sol" onclick="toggle('solutionBox')">✅ Plan de Ronde</button>
+            <button class="btn-expert" onclick="toggle('expertBox')">🚀 Optimisation</button>
+        </div>
+
+        <!-- BOÎTE D'AIDE -->
+        <div id="helpBox" class="content-box help-box">
+            <span class="tool-title">🎯 Critère de la Ronde Parfaite</span>
+            <div class="method-step">
+                <strong>Étape 1 : Modélisation.</strong> Représentez chaque intersection par un <span class="highlight">sommet</span> et chaque couloir par une <span class="highlight">arête</span>.
+            </div>
+            <div class="method-step">
+                <strong>Étape 2 : Calcul des Degrés.</strong> Pour chaque sommet, comptez le nombre d'arêtes qui y sont connectées. C'est le <strong>degré</strong> du sommet, noté $d(v)$.
+            </div>
+            <div class="method-step">
+                <strong>Étape 3 : Application du Théorème d'Euler.</strong>
+                <ul>
+                    <li>Si <strong>tous</strong> les degrés sont pairs → <strong>Cycle Eulérien</strong> possible (départ = arrivée)</li>
+                    <li>Si <strong>exactement deux</strong> sommets sont de degré impair → <strong>Chaîne Eulérienne</strong> possible (départ ≠ arrivée)</li>
+                    <li>Si plus de deux sommets impairs → <strong>Impossible</strong> sans répétition</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- SOLUTION DÉTAILLÉE -->
+        <div id="solutionBox" class="content-box solution-box">
+            <div class="tool-box">
+                <span class="tool-title">📐 Théorème d'Euler (1736)</span>
+                Un graphe connexe $G$ admet un <strong>cycle eulérien</strong> si et seulement si tous ses sommets ont un degré pair. Un tel cycle permet de revenir au point de départ après avoir parcouru chaque arête exactement une fois.
+            </div>
+            
+            <h3>Analyse Didactique de l'Entrepôt</h3>
+            
+            <!-- Solution adaptative générée dynamiquement -->
+            <div class="adaptive-solution" id="adaptiveSolution">
+                <h4>🎯 Solution pour la configuration actuelle</h4>
+                <p><strong>Analyse en cours...</strong> Cliquez sur "Générer une nouvelle configuration" pour voir la solution adaptée.</p>
+            </div>
+            
+            <!-- Exemple de base (visible uniquement au chargement initial) -->
+            <div id="defaultSolution">
+                <div class="solution-step">
+                    <div class="step-number">1</div>
+                    <strong>Modélisation du problème :</strong>
+                    <ul>
+                        <li>4 zones de stockage = 4 sommets (A, B, C, D)</li>
+                        <li>4 couloirs = 4 arêtes (AB, BC, CD, DA)</li>
+                        <li>Graphe : cycle $C_4$ (carré)</li>
+                    </ul>
+                </div>
+                
+                <div class="solution-step">
+                    <div class="step-number">2</div>
+                    <strong>Calcul des degrés :</strong>
+                    <ul>
+                        <li>Sommet A : 2 couloirs → $d(A) = 2$ (pair)</li>
+                        <li>Sommet B : 2 couloirs → $d(B) = 2$ (pair)</li>
+                        <li>Sommet C : 2 couloirs → $d(C) = 2$ (pair)</li>
+                        <li>Sommet D : 2 couloirs → $d(D) = 2$ (pair)</li>
+                    </ul>
+                    <div class="euler-formula">
+                        Somme des degrés = $2 + 2 + 2 + 2 = 8 = 2 \times 4$ (cohérent avec lemme des poignées de main)
+                    </div>
+                </div>
+                
+                <div class="solution-step">
+                    <div class="step-number">3</div>
+                    <strong>Application du théorème d'Euler :</strong>
+                    <p>Tous les sommets ont un degré pair ($2$). Donc un <strong>cycle eulérien</strong> existe.</p>
+                    <div class="theorem-box">
+                        <div class="theorem-title">Condition nécessaire et suffisante :</div>
+                        $$\text{Cycle eulérien existe} \iff \forall v \in V,\ d(v) \text{ est pair}$$
+                    </div>
+                </div>
+                
+                <div class="solution-step">
+                    <div class="step-number">4</div>
+                    <strong>Construction d'un parcours :</strong>
+                    <p>Parcours possible : A → B → C → D → A</p>
+                    <p><em>Autres parcours possibles :</em> A → D → C → B → A</p>
+                    <p>Longueur du parcours : 4 couloirs (arêtes)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPERT -->
+        <div id="expertBox" class="content-box expert-box">
+            <span class="tool-title">🔬 Approfondissement : Cycles vs Chemins</span>
+            <p><strong>Distinction Hamiltonien/Eulérien :</strong></p>
+            <ul>
+                <li><strong>Cycle Eulérien :</strong> Passe par chaque <em>arête</em> une fois (notre cas)</li>
+                <li><strong>Cycle Hamiltonien :</strong> Passe par chaque <em>sommet</em> une fois (problème NP-complet)</li>
+            </ul>
+            <p>Si l'agent devait passer par chaque étagère (sommet) plutôt que chaque couloir, le problème deviendrait exponentiellement plus difficile !</p>
+            
+            <div class="theorem-box">
+                <div class="theorem-title">Algorithme de Fleury (construction effective) :</div>
+                <ol>
+                    <li>Ne jamais traverser un "pont" (arête dont la suppression déconnecte le graphe) s'il existe une alternative</li>
+                    <li>Suivre n'importe quel autre chemin disponible</li>
+                    <li>Marquer les arêtes traversées</li>
+                    <li>Continuer jusqu'à épuisement des arêtes</li>
+                </ol>
+            </div>
+            
+            <p><strong>Complexité algorithmique :</strong></p>
+            <ul>
+                <li>Vérification des degrés : $O(n)$ où $n$ = nombre de sommets</li>
+                <li>Construction du parcours (Fleury) : $O(m^2)$ où $m$ = nombre d'arêtes</li>
+                <li>Meilleur algorithme (Hierholzer) : $O(m)$</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- MODALE ÉNONCÉ -->
+    <div id="statementModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('statementModal')">&times;</span>
+            <h3>🔐 Mission : Inspection de Sécurité</h3>
+            
+            <div class="difficulty-buttons" style="margin: 20px 0;">
+                <button class="diff-btn active" onclick="changeModalDifficulty(1)">Niveau 1</button>
+                <button class="diff-btn" onclick="changeModalDifficulty(2)">Niveau 2</button>
+                <button class="diff-btn" onclick="changeModalDifficulty(3)">Niveau 3</button>
+                <button class="diff-btn" onclick="changeModalDifficulty(4)">Niveau 4</button>
+                <button class="diff-btn" onclick="changeModalDifficulty(5)">Niveau 5</button>
+            </div>
+            
+            <div id="modalContent">
+                <h4>Niveau 1 : Entrepôt Carré Simple</h4>
+                <p>Un centre de distribution Amazon possède 4 zones de stockage disposées en rectangle (A, B, C, D) reliées par 4 couloirs formant un périmètre fermé.</p>
+                
+                <p><strong>Contraintes :</strong></p>
+                <ul>
+                    <li>L'agent part de la zone de charge A (coin supérieur gauche)</li>
+                    <li>Il doit inspecter les 4 couloirs pour détecter les intrusions</li>
+                    <li>Il doit revenir à A pour recharger son équipement</li>
+                    <li>Chaque couloir doit être inspecté exactement une fois</li>
+                </ul>
+
+                <p><strong>Graphe :</strong> $A-B$, $B-C$, $C-D$, $D-A$ (cycle $C_4$)</p>
+                
+                <div class="tool-box">
+                    <span class="tool-title">🧠 Questions :</span>
+                    <ol>
+                        <li>Peut-il accomplir sa mission sans passer deux fois par le même couloir ?</li>
+                        <li>Si oui, proposez un itinéraire optimal</li>
+                        <li>Que se passerait-il si un couloir était bloqué ?</li>
+                        <li>Comment adapter la méthode si l'entrepôt avait une forme différente ?</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE DROITS D'AUTEUR -->
+    <div id="copyrightModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('copyrightModal')">&times;</span>
+            <div class="copyright-content">
+                <h3>📜 Droits d'auteur & À propos</h3>
+                
+                <div class="author-info">
+                    <h4>👨‍💻 Auteur</h4>
+                    <p><strong>Yann Merdy</strong> (yann.merdy@gmail.com) - Décembre 2025</p>
+                    <p>Ce logiciel interactif est conçu pour l'enseignement et l'apprentissage de la Théorie des Graphes.</p>
+                </div>
+                
+                <div class="license-info">
+                    <h4>📄 Licence d'Utilisation Non Commerciale</h4>
+                    <p>Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, <strong>Yann Merdy</strong>.</p>
+                </div>
+                
+                <h4>✅ Conditions d'Utilisation Autorisées</h4>
+                <div class="tool-box">
+                    <span class="tool-title">Utilisation Privée et Éducative (Autorisée)</span>
+                    <p>Vous êtes autorisé.e à :</p>
+                    <ul>
+                        <li>Utiliser ce code et son contenu à des fins personnelles et éducatives</li>
+                        <li>Copier et modifier le code pour un usage non lucratif</li>
+                        <li>Distribuer le code dans un contexte éducatif (cours, ateliers, formations)</li>
+                        <li>Adapter le contenu pour des besoins pédagogiques spécifiques</li>
+                    </ul>
+                </div>
+                
+                <h4>🚫 Conditions d'Utilisation Interdites</h4>
+                <div class="restrictions-info">
+                    <span class="tool-title">Utilisation Commerciale (Strictement Interdite)</span>
+                    <p>Est strictement interdite sans accord écrit préalable :</p>
+                    <ul>
+                        <li>Toute utilisation à des fins commerciales ou lucratives</li>
+                        <li>L'intégration dans des produits ou services payants</li>
+                        <li>La reproduction partielle ou totale dans des publications commerciales</li>
+                        <li>L'utilisation dans des contextes professionnels à but lucratif</li>
+                        <li>La distribution via des plateformes payantes</li>
+                    </ul>
+                </div>
+                
+                <h4>📝 Obligations</h4>
+                <div class="tool-box">
+                    <span class="tool-title">Attribution et Mention</span>
+                    <ul>
+                        <li>Toute reproduction ou modification doit conserver la mention de l'auteur originale : <strong>Yann Merdy</strong></li>
+                        <li>La présente notice de droits d'auteur doit être incluse dans toute distribution</li>
+                        <li>Les modifications apportées doivent être clairement indiquées</li>
+                    </ul>
+                </div>
+                
+                <div class="contact-info">
+                    <h4>📧 Contact pour Licences Commerciales</h4>
+                    <p>Pour toute demande d'utilisation commerciale ou de licence spécifique :</p>
+                    <p><strong>📧 Email :</strong> <a href="mailto:yann.merdy@gmail.com" class="email-link">yann.merdy@gmail.com</a></p>
+                    <p style="margin-top: 15px; font-style: italic; color: #666;">
+                        Merci de respecter ces conditions qui permettent de maintenir ce projet éducatif accessible à tous.
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <p><strong>© 2025 - Yann Merdy - Tous droits réservés</strong></p>
+                    <p style="font-size: 0.9em; color: #777;">Dernière mise à jour : Décembre 2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE INTERACTIVE -->
+    <div id="interactiveModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeInteractiveModal()">&times;</span>
+            <h2 id="interactiveTitle">Graphe Interactif - Entrepôt</h2>
+            <p id="interactiveDesc">Déplacez les sommets pour mieux visualiser la structure</p>
+            
+            <div class="canvas-container">
+                <div class="canvas-hint">🖱️ Cliquez et glissez les sommets</div>
+                <canvas id="interactiveCanvas"></canvas>
+            </div>
+
+            <div class="btn-group" style="justify-content: center; margin-top: 25px;">
+                <button style="background:var(--help)" onclick="showDegrees()">💡 Afficher les Degrés</button>
+                <button style="background:var(--expert)" onclick="resetInteractiveGraph()">🔄 Réinitialiser</button>
+                <button style="background:var(--primary)" onclick="generateNewGraph()">🎲 Nouveau Graphe</button>
+                <button style="background:var(--accent)" onclick="findEulerianPath()">🔍 Trouver un Parcours</button>
+            </div>
+
+            <div id="graphAnalysis" style="margin-top: 20px; padding: 20px; background: #f5f5f5; border-radius: 10px;">
+                <h4>📊 Analyse Automatique</h4>
+                <p id="degreeInfo"></p>
+                <p id="eulerVerdict"></p>
+                <p id="pathSuggestion"></p>
+                <div id="eulerPath" style="display:none; margin-top: 15px; padding: 10px; background: white; border-radius: 5px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p><strong>© 2025 - Théorie des Graphes - Situation 1.1</strong></p>
+        <p>Le Patrouilleur de l'Entrepôt • Problème de Cycle Eulérien</p>
+        <p style="font-size: 0.9em; margin-top: 15px;">5 Niveaux de Difficulté • Solution Didactique Documentée • Génération Aléatoire • Solutions Adaptatives</p>
+        <button class="btn-copyright" onclick="openModal('copyrightModal')" style="margin-top: 20px; padding: 10px 20px; font-size: 0.9em;">
+            📜 Consulter les droits d'auteur
+        </button>
+    </footer>
+</div>
+
+<script>
+// ================== CONFIGURATIONS PAR NIVEAU ==================
+
+const difficultyConfigs = {
+    1: {
+        title: "Niveau 1 : Entrepôt Carré Simple",
+        description: "Cycle C₄ - 4 sommets de degré 2",
+        modalContent: `
+            <h4>Niveau 1 : Entrepôt Carré Simple</h4>
+            <p>Un centre de distribution Amazon possède 4 zones de stockage disposées en rectangle (A, B, C, D) reliées par 4 couloirs formant un périmètre fermé.</p>
+            <p><strong>Graphe :</strong> $A-B$, $B-C$, $C-D$, $D-A$ (cycle $C_4$)</p>
+        `,
+        nodes: [
+            {id: 1, x: 100, y: 50, label: 'A', originalX: 100, originalY: 50},
+            {id: 2, x: 300, y: 50, label: 'B', originalX: 300, originalY: 50},
+            {id: 3, x: 300, y: 200, label: 'C', originalX: 300, originalY: 200},
+            {id: 4, x: 100, y: 200, label: 'D', originalX: 100, originalY: 200}
+        ],
+        edges: [
+            {from: 1, to: 2},
+            {from: 2, to: 3},
+            {from: 3, to: 4},
+            {from: 4, to: 1}
+        ]
+    },
+    2: {
+        title: "Niveau 2 : Entrepôt avec Diagonale",
+        description: "C₄ + diagonale - sommets A et C de degré 3",
+        modalContent: `
+            <h4>Niveau 2 : Entrepôt avec Passage Diagonal</h4>
+            <p>L'entrepôt a maintenant un couloir diagonal supplémentaire entre les coins opposés.</p>
+            <p><strong>Graphe :</strong> $C_4$ + diagonale $A-C$</p>
+            <p><strong>Défi :</strong> Les degrés deviennent 3, 2, 3, 2. Un cycle eulérien est-il toujours possible ?</p>
+        `,
+        nodes: [
+            {id: 1, x: 100, y: 50, label: 'A', originalX: 100, originalY: 50},
+            {id: 2, x: 300, y: 50, label: 'B', originalX: 300, originalY: 50},
+            {id: 3, x: 300, y: 200, label: 'C', originalX: 300, originalY: 200},
+            {id: 4, x: 100, y: 200, label: 'D', originalX: 100, originalY: 200}
+        ],
+        edges: [
+            {from: 1, to: 2},
+            {from: 2, to: 3},
+            {from: 3, to: 4},
+            {from: 4, to: 1},
+            {from: 1, to: 3}
+        ]
+    },
+    3: {
+        title: "Niveau 3 : Entrepôt avec Salle Centrale",
+        description: "Étoile dans un carré - 5 sommets",
+        modalContent: `
+            <h4>Niveau 3 : Entrepôt avec Salle Centrale</h4>
+            <p>Une salle centrale a été ajoutée, connectée aux 4 coins. Le plan forme maintenant une étoile dans un carré.</p>
+            <p><strong>Graphe :</strong> 5 sommets, 8 arêtes</p>
+            <p><strong>Analyse :</strong> Tous les sommets ont-ils un degré pair ?</p>
+        `,
+        nodes: [
+            {id: 1, x: 100, y: 50, label: 'A', originalX: 100, originalY: 50},
+            {id: 2, x: 300, y: 50, label: 'B', originalX: 300, originalY: 50},
+            {id: 3, x: 300, y: 200, label: 'C', originalX: 300, originalY: 200},
+            {id: 4, x: 100, y: 200, label: 'D', originalX: 100, originalY: 200},
+            {id: 5, x: 200, y: 125, label: 'E', originalX: 200, originalY: 125}
+        ],
+        edges: [
+            {from: 1, to: 2},
+            {from: 2, to: 3},
+            {from: 3, to: 4},
+            {from: 4, to: 1},
+            {from: 5, to: 1},
+            {from: 5, to: 2},
+            {from: 5, to: 3},
+            {from: 5, to: 4}
+        ]
+    },
+    4: {
+        title: "Niveau 4 : Entrepôt Multi-Étage",
+        description: "2 niveaux avec escaliers - graphe orienté",
+        modalContent: `
+            <h4>Niveau 4 : Entrepôt Multi-Étage</h4>
+            <p>L'entrepôt possède maintenant 2 étages connectés par des escaliers. Certains couloirs sont à sens unique.</p>
+            <p><strong>Problème :</strong> Graphe orienté avec degrés entrants/sortants</p>
+        `,
+        nodes: [
+            {id: 1, x: 100, y: 50, label: 'A1', originalX: 100, originalY: 50},
+            {id: 2, x: 300, y: 50, label: 'B1', originalX: 300, originalY: 50},
+            {id: 3, x: 100, y: 150, label: 'A2', originalX: 100, originalY: 150},
+            {id: 4, x: 300, y: 150, label: 'B2', originalX: 300, originalY: 150},
+            {id: 5, x: 200, y: 100, label: 'Esc', originalX: 200, originalY: 100}
+        ],
+        edges: [
+            {from: 1, to: 2},
+            {from: 2, to: 4},
+            {from: 4, to: 3},
+            {from: 3, to: 1},
+            {from: 1, to: 5},
+            {from: 5, to: 3},
+            {from: 2, to: 5},
+            {from: 5, to: 4}
+        ]
+    },
+    5: {
+        title: "Niveau 5 : Mega-Entrepôt Complexe",
+        description: "Graphe complexe avec contraintes",
+        modalContent: `
+            <h4>Niveau 5 : Mega-Entrepôt avec Zones Restreintes</h4>
+            <p>Un entrepôt géant avec zones à accès restreint, couloirs avec passages obligatoires et contraintes temporelles.</p>
+            <p><strong>Défi :</strong> Chemin eulérien dans un graphe pondéré avec contraintes</p>
+        `,
+        nodes: [
+            {id: 1, x: 50, y: 50, label: 'Entrée', originalX: 50, originalY: 50},
+            {id: 2, x: 200, y: 50, label: 'Zone1', originalX: 200, originalY: 50},
+            {id: 3, x: 350, y: 50, label: 'Zone2', originalX: 350, originalY: 50},
+            {id: 4, x: 50, y: 150, label: 'Stock1', originalX: 50, originalY: 150},
+            {id: 5, x: 200, y: 150, label: 'Centre', originalX: 200, originalY: 150},
+            {id: 6, x: 350, y: 150, label: 'Stock2', originalX: 350, originalY: 150},
+            {id: 7, x: 200, y: 250, label: 'Sortie', originalX: 200, originalY: 250}
+        ],
+        edges: [
+            {from: 1, to: 2},
+            {from: 1, to: 4},
+            {from: 2, to: 3},
+            {from: 2, to: 5},
+            {from: 3, to: 6},
+            {from: 3, to: 5},
+            {from: 4, to: 5},
+            {from: 5, to: 6},
+            {from: 5, to: 7},
+            {from: 6, to: 7},
+            {from: 4, to: 7}
+        ]
+    }
+};
+
+// ================== VARIABLES GLOBALES ==================
+
+let currentDifficulty = 1;
+let randomGraphData = null;
+let showDegreeInfo = false;
+let currentGraphId = 1; // Pour suivre les générations
+
+// Variables pour le graphe statique déplaçable
+let staticGraphCanvas = null;
+let staticGraphCtx = null;
+let draggedStaticNode = null;
+let showDegreesOnStatic = false;
+
+// ================== GESTION DU GRAPHE STATIQUE DÉPLAÇABLE ==================
+
+function initStaticGraphCanvas() {
+    staticGraphCanvas = document.getElementById('graphCanvas');
+    if (!staticGraphCanvas) return;
+    
+    staticGraphCtx = staticGraphCanvas.getContext('2d');
+    
+    // Ajouter les événements de glisser-déposer
+    staticGraphCanvas.addEventListener('mousedown', handleStaticCanvasMouseDown);
+    staticGraphCanvas.addEventListener('mousemove', handleStaticCanvasMouseMove);
+    staticGraphCanvas.addEventListener('mouseup', handleStaticCanvasMouseUp);
+    
+    // Support tactile
+    staticGraphCanvas.addEventListener('touchstart', handleStaticCanvasTouchStart, {passive: false});
+    staticGraphCanvas.addEventListener('touchmove', handleStaticCanvasTouchMove, {passive: false});
+    staticGraphCanvas.addEventListener('touchend', handleStaticCanvasTouchEnd);
+    
+    drawStaticGraph();
+}
+
+function handleStaticCanvasMouseDown(e) {
+    const rect = staticGraphCanvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    if (randomGraphData && randomGraphData.nodes) {
+        draggedStaticNode = randomGraphData.nodes.find(n => 
+            Math.hypot(n.x - mouseX, n.y - mouseY) < 25
+        );
+    }
+}
+
+function handleStaticCanvasMouseMove(e) {
+    if (draggedStaticNode) {
+        const rect = staticGraphCanvas.getBoundingClientRect();
+        draggedStaticNode.x = Math.max(30, Math.min(staticGraphCanvas.width - 30, e.clientX - rect.left));
+        draggedStaticNode.y = Math.max(30, Math.min(staticGraphCanvas.height - 30, e.clientY - rect.top));
+        drawStaticGraph();
+    }
+}
+
+function handleStaticCanvasMouseUp() {
+    draggedStaticNode = null;
+}
+
+function handleStaticCanvasTouchStart(e) {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = staticGraphCanvas.getBoundingClientRect();
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+        
+        if (randomGraphData && randomGraphData.nodes) {
+            draggedStaticNode = randomGraphData.nodes.find(n => 
+                Math.hypot(n.x - touchX, n.y - touchY) < 30
+            );
+        }
+    }
+}
+
+function handleStaticCanvasTouchMove(e) {
+    e.preventDefault();
+    if (draggedStaticNode && e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = staticGraphCanvas.getBoundingClientRect();
+        draggedStaticNode.x = Math.max(30, Math.min(staticGraphCanvas.width - 30, touch.clientX - rect.left));
+        draggedStaticNode.y = Math.max(30, Math.min(staticGraphCanvas.height - 30, touch.clientY - rect.top));
+        drawStaticGraph();
+    }
+}
+
+function handleStaticCanvasTouchEnd() {
+    draggedStaticNode = null;
+}
+
+function toggleDegreesOnStaticGraph() {
+    showDegreesOnStatic = !showDegreesOnStatic;
+    drawStaticGraph();
+}
+
+function resetStaticGraphPositions() {
+    if (randomGraphData && randomGraphData.nodes) {
+        randomGraphData.nodes.forEach(node => {
+            if (node.originalX !== undefined && node.originalY !== undefined) {
+                node.x = node.originalX;
+                node.y = node.originalY;
+            }
+        });
+        drawStaticGraph();
+        showNotification("Positions réinitialisées !", "success");
+    }
+}
+
+// ================== FONCTIONS DE GÉNÉRATION ALÉATOIRE ==================
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateRandomValues() {
+    const config = difficultyConfigs[currentDifficulty];
+    const baseNodes = config.nodes;
+    const baseEdges = config.edges;
+    
+    // Pour chaque niveau, nous allons générer une variation aléatoire
+    let nodes, edges;
+    
+    switch(currentDifficulty) {
+        case 1:
+            // Pour le niveau 1 : varier le nombre de côtés du polygone
+            const sides = getRandomInt(3, 8); // Triangle à octogone
+            nodes = [];
+            edges = [];
+            
+            // Créer un polygone régulier
+            const centerX = 200;
+            const centerY = 125;
+            const radius = 80;
+            
+            for(let i = 0; i < sides; i++) {
+                const angle = (2 * Math.PI * i) / sides;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                nodes.push({
+                    id: i + 1,
+                    x: x,
+                    y: y,
+                    label: String.fromCharCode(65 + i), // A, B, C...
+                    originalX: x,
+                    originalY: y
+                });
+                
+                // Connecter chaque sommet au suivant
+                if(i < sides - 1) {
+                    edges.push({from: i + 1, to: i + 2});
+                }
+            }
+            // Fermer le polygone
+            edges.push({from: sides, to: 1});
+            break;
+            
+        case 2:
+            // Pour le niveau 2 : carré avec un nombre aléatoire de diagonales
+            nodes = JSON.parse(JSON.stringify(baseNodes));
+            edges = JSON.parse(JSON.stringify(baseEdges));
+            
+            // Ajouter des diagonales aléatoires
+            const possibleDiagonals = [
+                {from: 1, to: 3}, // A-C
+                {from: 2, to: 4}  // B-D
+            ];
+            
+            // Choisir un nombre aléatoire de diagonales à ajouter (0, 1 ou 2)
+            const numDiagonals = getRandomInt(0, 2);
+            const selectedDiagonals = [];
+            
+            while(selectedDiagonals.length < numDiagonals) {
+                const randomIndex = getRandomInt(0, possibleDiagonals.length - 1);
+                const diagonal = possibleDiagonals[randomIndex];
+                if(!selectedDiagonals.some(d => d.from === diagonal.from && d.to === diagonal.to)) {
+                    selectedDiagonals.push(diagonal);
+                    edges.push(diagonal);
+                }
+            }
+            break;
+            
+        case 3:
+            // Pour le niveau 3 : varier le nombre de connections du centre
+            nodes = JSON.parse(JSON.stringify(baseNodes));
+            edges = [];
+            
+            // Les arêtes du carré extérieur
+            edges.push({from: 1, to: 2});
+            edges.push({from: 2, to: 3});
+            edges.push({from: 3, to: 4});
+            edges.push({from: 4, to: 1});
+            
+            // Le centre (node 5)
+            const centerConnections = getRandomInt(2, 4); // Centre connecté à 2, 3 ou 4 coins
+            
+            // Choisir aléatoirement quels coins sont connectés au centre
+            const corners = [1, 2, 3, 4];
+            for(let i = 0; i < centerConnections; i++) {
+                const randomCorner = corners[getRandomInt(0, corners.length - 1)];
+                edges.push({from: 5, to: randomCorner});
+                // Retirer ce coin de la liste pour éviter les doublons
+                corners.splice(corners.indexOf(randomCorner), 1);
+            }
+            break;
+            
+        case 4:
+            // Pour le niveau 4 : varier les connections entre étages
+            nodes = JSON.parse(JSON.stringify(baseNodes));
+            edges = JSON.parse(JSON.stringify(baseEdges));
+            
+            // Changer certaines arêtes pour les rendre directionnelles ou les supprimer
+            const edgeModifications = getRandomInt(1, 3);
+            
+            for(let i = 0; i < edgeModifications; i++) {
+                const randomEdgeIndex = getRandomInt(0, edges.length - 1);
+                const edge = edges[randomEdgeIndex];
+                
+                // 50% de chance de supprimer l'arête, 50% de chance d'en ajouter une dans l'autre sens
+                if(Math.random() > 0.5) {
+                    edges.splice(randomEdgeIndex, 1);
+                } else {
+                    // Ajouter l'arête inverse
+                    edges.push({from: edge.to, to: edge.from});
+                }
+            }
+            break;
+            
+        case 5:
+            // Pour le niveau 5 : graphe aléatoire complexe
+            nodes = [];
+            edges = [];
+            
+            // Générer un nombre aléatoire de nœuds (entre 5 et 10)
+            const numNodes = getRandomInt(5, 10);
+            
+            // Créer les nœuds avec des positions aléatoires
+            for(let i = 0; i < numNodes; i++) {
+                const x = getRandomInt(50, 350);
+                const y = getRandomInt(50, 250);
+                nodes.push({
+                    id: i + 1,
+                    x: x,
+                    y: y,
+                    label: String.fromCharCode(65 + i),
+                    originalX: x,
+                    originalY: y
+                });
+            }
+            
+            // Générer des arêtes aléatoires (entre n et 2n arêtes)
+            const numEdges = getRandomInt(numNodes, numNodes * 2);
+            
+            for(let i = 0; i < numEdges; i++) {
+                const fromNode = getRandomInt(1, numNodes);
+                let toNode;
+                do {
+                    toNode = getRandomInt(1, numNodes);
+                } while(toNode === fromNode);
+                
+                edges.push({from: fromNode, to: toNode});
+            }
+            break;
+            
+        default:
+            nodes = JSON.parse(JSON.stringify(baseNodes));
+            edges = JSON.parse(JSON.stringify(baseEdges));
+    }
+    
+    // Calculer les degrés
+    const degrees = {};
+    nodes.forEach(node => degrees[node.label] = 0);
+    edges.forEach(edge => {
+        const fromNode = nodes.find(n => n.id === edge.from);
+        const toNode = nodes.find(n => n.id === edge.to);
+        if (fromNode) degrees[fromNode.label]++;
+        if (toNode) degrees[toNode.label]++;
+    });
+    
+    // Compter les sommets impairs
+    const oddVertices = Object.entries(degrees).filter(([_, deg]) => deg % 2 !== 0);
+    const isPossible = oddVertices.length === 0 || oddVertices.length === 2;
+    
+    randomGraphData = {
+        nodes: nodes,
+        edges: edges,
+        degrees: degrees,
+        oddVertices: oddVertices.map(([label, _]) => label),
+        isPossible: isPossible,
+        totalEdges: edges.length,
+        graphId: currentGraphId++
+    };
+    
+    updateDisplay();
+    updateAdaptiveSolution();
+    drawStaticGraph();
+    
+    // Si le graphe interactif est ouvert, le mettre à jour
+    if(interactiveGraph && document.getElementById('interactiveModal').style.display === 'block') {
+        interactiveGraph.init(randomGraphData);
+        updateInteractiveAnalysis();
+    }
+    
+    // Afficher une notification
+    showNotification("Nouvelle configuration générée ! Solution adaptée mise à jour.", "success");
+}
+
+function generateTrulyRandomValues() {
+    // Changer aléatoirement de niveau de difficulté
+    const newDifficulty = getRandomInt(1, 5);
+    changeDifficulty(newDifficulty);
+    
+    // Générer des valeurs aléatoires pour ce niveau
+    setTimeout(() => {
+        generateRandomValues();
+        showNotification(`Niveau ${newDifficulty} avec configuration aléatoire générée !`, "info");
+    }, 100);
+}
+
+// ================== MISE À JOUR DES SOLUTIONS ADAPTATIVES ==================
+
+function updateAdaptiveSolution() {
+    const data = randomGraphData;
+    if (!data) return;
+    
+    const adaptiveDiv = document.getElementById('adaptiveSolution');
+    const defaultDiv = document.getElementById('defaultSolution');
+    
+    // Masquer la solution par défaut
+    defaultDiv.style.display = 'none';
+    
+    // Construire la solution adaptative
+    let solutionHTML = `
+        <h4>🎯 Solution pour la configuration #${data.graphId}</h4>
+        
+        <div class="solution-step">
+            <div class="step-number">1</div>
+            <strong>Modélisation du graphe :</strong>
+            <table class="solution-table">
+                <tr>
+                    <th>Zone</th>
+                    <th>Label</th>
+                    <th>Position</th>
+                    <th>Degré</th>
+                </tr>
+    `;
+    
+    // Ajouter les informations sur les nœuds
+    data.nodes.forEach((node, index) => {
+        const degree = data.degrees[node.label] || 0;
+        const parity = degree % 2 === 0 ? 'pair' : 'impair';
+        const parityClass = degree % 2 === 0 ? 'legend-even' : 'legend-odd';
+        
+        solutionHTML += `
+            <tr>
+                <td><strong>${node.label}</strong></td>
+                <td>Sommet ${node.label}</td>
+                <td>(${Math.round(node.x)}, ${Math.round(node.y)})</td>
+                <td><span class="${parityClass}" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px;"></span>${degree} (${parity})</td>
+            </tr>
+        `;
+    });
+    
+    solutionHTML += `
+            </table>
+            <p><strong>Nombre d'arêtes :</strong> ${data.totalEdges} couloirs</p>
+            <p><strong>Nombre de sommets :</strong> ${data.nodes.length} zones</p>
+        </div>
+        
+        <div class="solution-step">
+            <div class="step-number">2</div>
+            <strong>Analyse des degrés :</strong>
+            <table class="solution-table">
+                <tr>
+                    <th>Sommet</th>
+                    <th>Degré</th>
+                    <th>Parité</th>
+                    <th>Statut</th>
+                </tr>
+    `;
+    
+    // Analyse détaillée des degrés
+    let oddCount = 0;
+    Object.entries(data.degrees).forEach(([label, degree]) => {
+        const isOdd = degree % 2 !== 0;
+        if (isOdd) oddCount++;
+        
+        solutionHTML += `
+            <tr>
+                <td><strong>${label}</strong></td>
+                <td>${degree}</td>
+                <td>${isOdd ? 'Impair' : 'Pair'}</td>
+                <td>${isOdd ? '⚠️' : '✅'}</td>
+            </tr>
+        `;
+    });
+    
+    solutionHTML += `
+            </table>
+            <div class="euler-formula">
+                Somme des degrés = ${Object.values(data.degrees).reduce((a, b) => a + b, 0)} = 2 × ${data.totalEdges} (lemme des poignées de main)
+            </div>
+            <p><strong>Sommets impairs :</strong> ${oddCount} (${data.oddVertices.join(', ') || 'Aucun'})</p>
+        </div>
+        
+        <div class="solution-step">
+            <div class="step-number">3</div>
+            <strong>Application du théorème d'Euler :</strong>
+    `;
+    
+    // Application du théorème avec conclusion adaptée
+    if (data.oddVertices.length === 0) {
+        solutionHTML += `
+            <div class="theorem-box" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                <div class="theorem-title">✅ Condition satisfaite : Cycle Eulérien possible</div>
+                <p>Tous les sommets ont un degré pair (${oddCount} sommets impairs).</p>
+                <p><strong>Conclusion :</strong> L'agent peut inspecter tous les couloirs exactement une fois et revenir à son point de départ.</p>
+            </div>
+        `;
+    } else if (data.oddVertices.length === 2) {
+        solutionHTML += `
+            <div class="theorem-box" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+                <div class="theorem-title">⚠️ Condition partiellement satisfaite : Chaîne Eulérienne possible</div>
+                <p>Exactement 2 sommets ont un degré impair (${data.oddVertices[0]} et ${data.oddVertices[1]}).</p>
+                <p><strong>Conclusion :</strong> L'agent peut inspecter tous les couloirs exactement une fois, mais doit démarrer en ${data.oddVertices[0]} et terminer en ${data.oddVertices[1]} (ou vice-versa).</p>
+            </div>
+        `;
+    } else {
+        solutionHTML += `
+            <div class="theorem-box" style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);">
+                <div class="theorem-title">❌ Condition non satisfaite : Parcours impossible</div>
+                <p>${data.oddVertices.length} sommets ont un degré impair (${data.oddVertices.join(', ')}).</p>
+                <p><strong>Conclusion :</strong> L'agent ne peut pas inspecter tous les couloirs sans répétition. Il devra répéter au moins ${Math.max(0, data.oddVertices.length/2 - 1)} couloir(s).</p>
+            </div>
+        `;
+    }
+    
+    solutionHTML += `
+        </div>
+        
+        <div class="solution-step">
+            <div class="step-number">4</div>
+            <strong>Parcours recommandé :</strong>
+    `;
+    
+    // Génération d'un parcours adapté
+    if (data.oddVertices.length === 0) {
+        const cycle = findEulerianCycle(data);
+        solutionHTML += `
+            <div class="path-display">
+                <p class="possible-path">🔁 Cycle eulérien possible :</p>
+                <p><strong>${cycle}</strong></p>
+                <p><em>Longueur : ${data.totalEdges} couloirs</em></p>
+                <p>💡 L'agent part et revient au même point après avoir inspecté tous les couloirs.</p>
+            </div>
+        `;
+    } else if (data.oddVertices.length === 2) {
+        const path = findEulerianPath(data);
+        solutionHTML += `
+            <div class="path-display">
+                <p class="possible-path">➡️ Chaîne eulérienne possible :</p>
+                <p><strong>Départ : ${data.oddVertices[0]} → Arrivée : ${data.oddVertices[1]}</strong></p>
+                <p>Parcours : <strong>${path}</strong></p>
+                <p><em>Longueur : ${data.totalEdges} couloirs</em></p>
+                <p>⚠️ L'agent doit démarrer et terminer à des points différents.</p>
+            </div>
+        `;
+    } else {
+        solutionHTML += `
+            <div class="path-display">
+                <p class="impossible-path">❌ Aucun parcours eulérien possible</p>
+                <p><strong>Solution approchée :</strong></p>
+                <ol>
+                    <li>Dupliquer ${Math.max(0, data.oddVertices.length/2 - 1)} arête(s) pour rendre tous les degrés pairs</li>
+                    <li>Appliquer l'algorithme de Fleury sur le graphe modifié</li>
+                    <li>Retirer les arêtes dupliquées du parcours final</li>
+                </ol>
+                <p>💡 Cette méthode minimise le nombre de couloirs à inspecter deux fois.</p>
+            </div>
+        `;
+    }
+    
+    // Ajouter une section pour les variantes
+    solutionHTML += `
+            <p><strong>Autres parcours possibles :</strong></p>
+            <ul>
+                <li>Pour un cycle eulérien : n'importe quel sommet peut être le point de départ</li>
+                <li>Pour une chaîne eulérienne : départ et arrivée doivent être les sommets impairs</li>
+                <li>L'ordre de parcours des arêtes peut varier selon l'algorithme utilisé</li>
+            </ul>
+        </div>
+        
+        <div class="solution-step">
+            <div class="step-number">5</div>
+            <strong>Conseils pratiques :</strong>
+            <div class="tool-box">
+                <span class="tool-title">🔧 Adaptation au terrain</span>
+                <ul>
+                    <li><strong>Graphe actuel :</strong> ${data.nodes.length} zones, ${data.totalEdges} couloirs</li>
+                    <li><strong>Complexité :</strong> Niveau ${currentDifficulty} ${"★".repeat(currentDifficulty)}${"☆".repeat(5-currentDifficulty)}</li>
+                    <li><strong>Temps estimé :</strong> ${data.totalEdges * 2} minutes (2 min/couloir)</li>
+                    <li><strong>Équipement :</strong> Lampe torche, talkie-walkie, plan de l'entrepôt</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    adaptiveDiv.innerHTML = solutionHTML;
+    
+    // Mettre à jour MathJax
+    if (window.MathJax) {
+        MathJax.typeset([adaptiveDiv]);
+    }
+}
+
+function findEulerianCycle(data) {
+    // Algorithme simplifié pour trouver un cycle eulérien
+    if (!data || !data.nodes || data.nodes.length === 0) return "Graphe vide";
+    
+    // Si tous les degrés sont 2 (cycle simple)
+    if (Object.values(data.degrees).every(d => d === 2)) {
+        const labels = data.nodes.map(n => n.label);
+        const cycle = [...labels, labels[0]];
+        return cycle.join(' → ');
+    }
+    
+    // Pour les graphes plus complexes, utiliser un algorithme simple
+    const visitedEdges = new Set();
+    const edgesByNode = {};
+    
+    // Construire la structure de voisinage
+    data.edges.forEach((edge, idx) => {
+        const fromLabel = data.nodes.find(n => n.id === edge.from)?.label;
+        const toLabel = data.nodes.find(n => n.id === edge.to)?.label;
+        
+        if (fromLabel && toLabel) {
+            if (!edgesByNode[fromLabel]) edgesByNode[fromLabel] = [];
+            if (!edgesByNode[toLabel]) edgesByNode[toLabel] = [];
+            
+            edgesByNode[fromLabel].push({to: toLabel, idx});
+            edgesByNode[toLabel].push({to: fromLabel, idx});
+        }
+    });
+    
+    // Commencer par un sommet quelconque
+    let startNode = data.nodes[0].label;
+    let current = startNode;
+    let path = [current];
+    
+    // Parcourir les arêtes
+    while (visitedEdges.size < data.edges.length) {
+        if (edgesByNode[current]) {
+            const available = edgesByNode[current].filter(e => !visitedEdges.has(e.idx));
+            
+            if (available.length > 0) {
+                // Choisir une arête non visitée
+                const nextEdge = available[0];
+                visitedEdges.add(nextEdge.idx);
+                current = nextEdge.to;
+                path.push(current);
+            } else {
+                // Si aucune arête disponible, essayer de revenir en arrière
+                break;
+            }
+        } else {
+            break;
+        }
+        
+        // Limiter la boucle pour éviter les boucles infinies
+        if (visitedEdges.size > data.edges.length * 2) break;
+    }
+    
+    // Si on est revenu au point de départ, c'est un cycle
+    if (current === startNode) {
+        return path.join(' → ');
+    } else {
+        // Sinon, c'est un chemin
+        return path.join(' → ') + " → ... (cycle incomplet)";
+    }
+}
+
+function findEulerianPath(data) {
+    if (!data || data.oddVertices.length !== 2) return "Pas de chemin eulérien";
+    
+    const start = data.oddVertices[0];
+    const end = data.oddVertices[1];
+    
+    // Construction simple d'un chemin
+    const edgesByNode = {};
+    
+    data.edges.forEach((edge, idx) => {
+        const fromLabel = data.nodes.find(n => n.id === edge.from)?.label;
+        const toLabel = data.nodes.find(n => n.id === edge.to)?.label;
+        
+        if (fromLabel && toLabel) {
+            if (!edgesByNode[fromLabel]) edgesByNode[fromLabel] = [];
+            if (!edgesByNode[toLabel]) edgesByNode[toLabel] = [];
+            
+            edgesByNode[fromLabel].push({to: toLabel, idx});
+            edgesByNode[toLabel].push({to: fromLabel, idx});
+        }
+    });
+    
+    let current = start;
+    let path = [current];
+    const visitedEdges = new Set();
+    
+    while (current !== end && visitedEdges.size < data.edges.length) {
+        if (edgesByNode[current]) {
+            const available = edgesByNode[current].filter(e => !visitedEdges.has(e.idx));
+            
+            if (available.length > 0) {
+                const nextEdge = available[0];
+                visitedEdges.add(nextEdge.idx);
+                current = nextEdge.to;
+                path.push(current);
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+    
+    return path.join(' → ');
+}
+
+// ================== FONCTIONS UTILITAIRES ==================
+
+function showNotification(message, type) {
+    // Créer une notification temporaire
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4caf50' : '#2196f3'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5em;">${type === 'success' ? '✅' : '🎲'}</span>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Supprimer après 3 secondes
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+// Ajouter l'animation slideOut
+const style = document.createElement('style');
+style.innerHTML = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
+function updateDisplay() {
+    const data = randomGraphData;
+    if (!data) return;
+    
+    const div = document.getElementById('randomValues');
+    const degreeList = Object.entries(data.degrees)
+        .map(([label, deg]) => `${label}=${deg}`)
+        .join(', ');
+    
+    let graphType = "";
+    if(currentDifficulty === 1) graphType = "Polygone à " + data.nodes.length + " côtés";
+    else if(currentDifficulty === 2) graphType = "Carré avec " + (data.edges.length - 4) + " diagonale(s)";
+    else if(currentDifficulty === 3) graphType = "Carré avec centre connecté à " + (data.edges.length - 4) + " coin(s)";
+    else if(currentDifficulty === 4) graphType = "Multi-étage avec " + data.edges.length + " passages";
+    else graphType = "Graphe complexe avec " + data.nodes.length + " zones";
+    
+    div.innerHTML = `
+        <p><strong>Configuration générée #${data.graphId}:</strong></p>
+        <ul>
+            <li>Nombre de couloirs : ${data.totalEdges}</li>
+            <li>Nombre de zones : ${data.nodes.length}</li>
+            <li>Degrés des sommets : ${degreeList}</li>
+            <li>Sommets impairs : ${data.oddVertices.length > 0 ? data.oddVertices.join(', ') : 'Aucun'}</li>
+            <li>Somme des degrés : ${Object.values(data.degrees).reduce((a, b) => a + b, 0)}</li>
+            <li>Théorème d'Euler : ${data.isPossible ? '✅ Satisfait' : '❌ Non satisfait'}</li>
+        </ul>
+        <p><strong>Type de graphe :</strong> ${graphType}</p>
+        <p><strong>Niveau :</strong> ${currentDifficulty} ${"★".repeat(currentDifficulty)}${"☆".repeat(5-currentDifficulty)}</p>
+        <p><em>💡 La solution dans "Plan de Ronde" est adaptée à cette configuration.</em></p>
+    `;
+}
+
+// ================== DESSIN DU GRAPHE STATIQUE ==================
+
+function drawStaticGraph() {
+    if (!staticGraphCanvas || !staticGraphCtx) {
+        initStaticGraphCanvas();
+        return;
+    }
+    
+    const ctx = staticGraphCtx;
+    const data = randomGraphData;
+    
+    if (!data || !data.nodes) return;
+    
+    // Effacer le canvas
+    ctx.clearRect(0, 0, staticGraphCanvas.width, staticGraphCanvas.height);
+    
+    // Arrière-plan
+    ctx.fillStyle = '#f9f9f9';
+    ctx.fillRect(0, 0, staticGraphCanvas.width, staticGraphCanvas.height);
+    
+    // Dessiner les arêtes
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 3;
+    data.edges.forEach(edge => {
+        const fromNode = data.nodes.find(n => n.id === edge.from);
+        const toNode = data.nodes.find(n => n.id === edge.to);
+        if (fromNode && toNode) {
+            ctx.beginPath();
+            ctx.moveTo(fromNode.x, fromNode.y);
+            ctx.lineTo(toNode.x, toNode.y);
+            ctx.stroke();
+        }
+    });
+    
+    // Dessiner les sommets
+    data.nodes.forEach(node => {
+        const degree = data.degrees[node.label] || 0;
+        const isEven = degree % 2 === 0;
+        
+        // Cercle du sommet
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 20, 0, Math.PI * 2);
+        ctx.fillStyle = isEven ? "#2e7d32" : "#c62828";
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Label du sommet
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(node.label, node.x, node.y);
+        
+        // Afficher le degré si activé
+        if (showDegreesOnStatic) {
+            ctx.fillStyle = "#1a237e";
+            ctx.font = "bold 12px Arial";
+            ctx.fillText(`d=${degree}`, node.x, node.y - 35);
+        }
+    });
+}
+
+// ================== GESTION DES DIFFICULTÉS ==================
+
+function changeDifficulty(level) {
+    currentDifficulty = level;
+    
+    // Mettre à jour les boutons actifs
+    document.querySelectorAll('.diff-btn').forEach((btn, index) => {
+        btn.classList.remove('active');
+        if (index === level - 1) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Mettre à jour le contenu
+    const config = difficultyConfigs[level];
+    const contentDiv = document.getElementById('dynamic-content');
+    
+    contentDiv.innerHTML = `
+        <div class="difficulty-content active">
+            <div class="complexity-indicator">${config.description}</div>
+            <h3>${config.title}</h3>
+            <p><em>${difficultyConfigs[level].modalContent.match(/<p>(.*?)<\/p>/)?.[1] || ''}</em></p>
+            
+            <div class="graph-display">
+                <h4>📐 Représentation Graphique (Sommets déplaçables)</h4>
+                <div class="graph-canvas-container">
+                    <canvas id="graphCanvas" class="graph-canvas" width="400" height="300"></canvas>
+                </div>
+                <div class="canvas-controls">
+                    <button class="canvas-control-btn" onclick="toggleDegreesOnStaticGraph()">
+                        💡 Afficher/Masquer les degrés
+                    </button>
+                    <button class="canvas-control-btn" onclick="resetStaticGraphPositions()">
+                        🔄 Réinitialiser positions
+                    </button>
+                </div>
+                <div class="canvas-info">
+                    💡 Astuce : Cliquez et déplacez les sommets pour réorganiser le graphe
+                </div>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-color legend-even"></div>
+                        <span>Sommet degré pair</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-odd"></div>
+                        <span>Sommet degré impair</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-edge"></div>
+                        <span>Couloir (arête)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Générer les valeurs aléatoires pour ce niveau
+    generateRandomValues();
+    
+    // Réinitialiser le canvas statique
+    initStaticGraphCanvas();
+    
+    // Redessiner MathJax
+    if (window.MathJax) {
+        MathJax.typeset();
+    }
+}
+
+function changeModalDifficulty(level) {
+    changeDifficulty(level);
+    
+    const modalContent = document.getElementById('modalContent');
+    const config = difficultyConfigs[level];
+    
+    if (modalContent && config) {
+        modalContent.innerHTML = `
+            <h4>${config.title}</h4>
+            ${config.modalContent}
+            
+            <div class="tool-box">
+                <span class="tool-title">🧠 Questions :</span>
+                <ol>
+                    <li>Peut-il accomplir sa mission sans passer deux fois par le même couloir ?</li>
+                    <li>Si oui, proposez un itinéraire optimal</li>
+                    <li>Que se passerait-il si un couloir était bloqué ?</li>
+                    <li>Comment adapter la méthode si l'entrepôt avait une forme différente ?</li>
+                </ol>
+            </div>
+        `;
+    }
+    
+    // Mettre à jour les boutons dans la modale
+    document.querySelectorAll('#statementModal .diff-btn').forEach((btn, index) => {
+        btn.classList.remove('active');
+        if (index === level - 1) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+// ================== MOTEUR DE GRAPHE INTERACTIF ==================
+
+class InteractiveGraphEngine {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.nodes = [];
+        this.edges = [];
+        this.draggedNode = null;
+        this.showDegrees = false;
+        
+        this.initEvents();
+        this.resizeCanvas();
+    }
+
+    resizeCanvas() {
+        const container = this.canvas.parentElement;
+        this.canvas.width = container.clientWidth - 40;
+        this.canvas.height = 400;
+    }
+
+    init(data) {
+        if (!data) return;
+        
+        this.nodes = JSON.parse(JSON.stringify(data.nodes));
+        this.edges = data.edges;
+        
+        // Ajuster les coordonnées pour le canvas interactif
+        const scale = 1.5;
+        const offsetX = 50;
+        const offsetY = 50;
+        
+        this.nodes.forEach(node => {
+            node.x = node.x * scale + offsetX;
+            node.y = node.y * scale + offsetY;
+            node.originalX = node.x;
+            node.originalY = node.y;
+        });
+        
+        this.draw();
+    }
+
+    initEvents() {
+        this.canvas.onmousedown = (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            this.draggedNode = this.nodes.find(n => 
+                Math.hypot(n.x - mouseX, n.y - mouseY) < 25
+            );
+        };
+
+        this.canvas.onmousemove = (e) => {
+            if (this.draggedNode) {
+                const rect = this.canvas.getBoundingClientRect();
+                this.draggedNode.x = Math.max(30, Math.min(this.canvas.width - 30, e.clientX - rect.left));
+                this.draggedNode.y = Math.max(30, Math.min(this.canvas.height - 30, e.clientY - rect.top));
+                this.draw();
+                updateInteractiveAnalysis();
+            }
+        };
+
+        this.canvas.onmouseup = () => { 
+            this.draggedNode = null; 
+        };
+
+        window.addEventListener('resize', () => {
+            this.resizeCanvas();
+            this.draw();
+        });
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Arrière-plan
+        this.ctx.fillStyle = '#fafafa';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Dessiner les arêtes
+        this.edges.forEach(edge => {
+            const n1 = this.nodes.find(n => n.id === edge.from);
+            const n2 = this.nodes.find(n => n.id === edge.to);
+            if (n1 && n2) this.drawEdge(n1, n2);
+        });
+
+        // Dessiner les sommets
+        this.nodes.forEach(node => {
+            const degree = this.calculateDegree(node.id);
+            const isEven = degree % 2 === 0;
+            
+            // Cercle du sommet
+            this.ctx.beginPath();
+            this.ctx.arc(node.x, node.y, 20, 0, Math.PI * 2);
+            this.ctx.fillStyle = isEven ? "#2e7d32" : "#c62828";
+            this.ctx.fill();
+            this.ctx.strokeStyle = "#fff";
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+            
+            // Label du sommet
+            this.ctx.fillStyle = "white";
+            this.ctx.font = "bold 14px Arial";
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            this.ctx.fillText(node.label, node.x, node.y);
+            
+            // Afficher le degré si activé
+            if (this.showDegrees) {
+                this.ctx.fillStyle = "#1a237e";
+                this.ctx.font = "bold 13px Arial";
+                this.ctx.fillText(`d=${degree}`, node.x, node.y - 35);
+            }
+        });
+    }
+
+    drawEdge(n1, n2) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(n1.x, n1.y);
+        this.ctx.lineTo(n2.x, n2.y);
+        this.ctx.strokeStyle = "#666";
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+    }
+
+    calculateDegree(nodeId) {
+        return this.edges.reduce((sum, edge) => {
+            if (edge.from === nodeId) sum++;
+            if (edge.to === nodeId) sum++;
+            return sum;
+        }, 0);
+    }
+
+    analyze() {
+        const degrees = this.nodes.map(n => ({
+            label: n.label,
+            degree: this.calculateDegree(n.id),
+            x: n.x,
+            y: n.y
+        }));
+
+        const oddDegrees = degrees.filter(d => d.degree % 2 === 1);
+        
+        let degreeText = "Degrés : ";
+        degreeText += degrees.map(d => `${d.label}=${d.degree}`).join(", ");
+        
+        let verdict = "";
+        let suggestion = "";
+        
+        if (oddDegrees.length === 0) {
+            verdict = "✅ <strong>Cycle eulérien possible</strong> (tous les degrés sont pairs)";
+            suggestion = "Cliquez sur 'Trouver un Parcours' pour voir un chemin possible";
+        } else if (oddDegrees.length === 2) {
+            verdict = `⚠️ <strong>Chaîne eulérienne possible</strong> (exactement 2 sommets impairs : ${oddDegrees[0].label} et ${oddDegrees[1].label})`;
+            suggestion = `Départ : ${oddDegrees[0].label}, Arrivée : ${oddDegrees[1].label}`;
+        } else {
+            verdict = `❌ <strong>Impossible sans répétition</strong> (${oddDegrees.length} sommets de degré impair)`;
+            suggestion = `Dupliquer ${oddDegrees.length/2 - 1} arête(s) pour rendre tous les degrés pairs`;
+        }
+
+        return { degreeText, verdict, suggestion, oddVertices: oddDegrees.map(d => d.label) };
+    }
+
+    findEulerianPath() {
+        const analysis = this.analyze();
+        const data = {
+            nodes: this.nodes,
+            edges: this.edges,
+            degrees: {},
+            oddVertices: analysis.oddVertices
+        };
+        
+        // Calculer les degrés
+        this.nodes.forEach(node => {
+            data.degrees[node.label] = this.calculateDegree(node.id);
+        });
+        
+        if(analysis.oddVertices.length === 0) {
+            return findEulerianCycle(data);
+        } else if(analysis.oddVertices.length === 2) {
+            return findEulerianPath(data);
+        } else {
+            return "Pas de parcours eulérien possible";
+        }
+    }
+
+    toggleDegrees() {
+        this.showDegrees = !this.showDegrees;
+        this.draw();
+    }
+
+    reset() {
+        if (randomGraphData) {
+            this.init(randomGraphData);
+        }
+    }
+}
+
+let interactiveGraph = null;
+
+// ================== FONCTIONS D'INTERFACE ==================
+
+function openModal(id) { 
+    document.getElementById(id).style.display = "block"; 
+    if(window.MathJax) MathJax.typeset();
+}
+
+function closeModal(id) { 
+    document.getElementById(id).style.display = "none"; 
+}
+
+function toggle(id) {
+    const element = document.getElementById(id);
+    const isVisible = element.style.display === "block";
+    document.querySelectorAll('.content-box').forEach(box => box.style.display = 'none');
+    element.style.display = isVisible ? "none" : "block";
+    if(window.MathJax) MathJax.typeset();
+}
+
+function openInteractiveCanvas() {
+    document.getElementById('interactiveModal').style.display = "block";
+    
+    // Initialiser le graphe interactif
+    setTimeout(() => {
+        if (!interactiveGraph) {
+            interactiveGraph = new InteractiveGraphEngine('interactiveCanvas');
+        }
+        if (randomGraphData) {
+            interactiveGraph.init(randomGraphData);
+            updateInteractiveAnalysis();
+        }
+    }, 100);
+}
+
+function closeInteractiveModal() {
+    document.getElementById('interactiveModal').style.display = "none";
+}
+
+function showDegrees() {
+    if (interactiveGraph) {
+        interactiveGraph.toggleDegrees();
+        updateInteractiveAnalysis();
+    }
+}
+
+function resetInteractiveGraph() {
+    if (interactiveGraph) {
+        interactiveGraph.reset();
+        updateInteractiveAnalysis();
+    }
+}
+
+function generateNewGraph() {
+    generateRandomValues();
+    if (interactiveGraph && randomGraphData) {
+        interactiveGraph.init(randomGraphData);
+        updateInteractiveAnalysis();
+    }
+}
+
+function findEulerianPath() {
+    if (interactiveGraph) {
+        const path = interactiveGraph.findEulerianPath();
+        const pathDiv = document.getElementById('eulerPath');
+        pathDiv.innerHTML = `<strong>🎯 Parcours eulérien :</strong><br>${path}`;
+        pathDiv.style.display = 'block';
+    }
+}
+
+function updateInteractiveAnalysis() {
+    if (!interactiveGraph) return;
+    
+    const analysis = interactiveGraph.analyze();
+    document.getElementById('degreeInfo').innerHTML = analysis.degreeText;
+    document.getElementById('eulerVerdict').innerHTML = analysis.verdict;
+    document.getElementById('pathSuggestion').innerHTML = analysis.suggestion;
+    document.getElementById('eulerPath').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    if (event.target.className === 'modal') { 
+        event.target.style.display = "none"; 
+    }
+}
+
+// ================== INITIALISATION ==================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser avec le niveau 1
+    changeDifficulty(1);
+    
+    // Initialiser le canvas statique
+    initStaticGraphCanvas();
+    
+    // Initialiser MathJax
+    if (window.MathJax) {
+        setTimeout(() => MathJax.typeset(), 500);
+    }
+});
+</script>
+
+</body>
+</html>
