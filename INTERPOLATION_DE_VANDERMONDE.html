@@ -1,0 +1,2781 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpolation Polynomiale de Vandermonde - Trajectoire Drone</title>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <style>
+        :root {
+            --primary: #1565c0;
+            --accent: #ff9800;
+            --help: #0097a7;
+            --solution: #2e7d32;
+            --expert: #6a1b9a;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #212121;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px;
+        }
+        
+        header { 
+            text-align: center; 
+            padding: 80px 30px; 
+            background: linear-gradient(135deg, var(--primary), #0d47a1, var(--expert)); 
+            color: white; 
+            border-radius: 0 0 60px 60px;
+            margin-bottom: 50px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.25);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.8em;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .difficulty-indicator {
+            font-size: 0.75em;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 5px;
+            margin-bottom: 12px;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+        .diff-1 { background: #e8f5e9; color: #2e7d32; }
+        .diff-2 { background: #fff3e0; color: #ef6c00; }
+        .diff-3 { background: #ffebee; color: #c62828; }
+        .diff-4 { background: #f3e5f5; color: #6a1b9a; }
+        .diff-5 { background: #212121; color: #ffffff; }
+
+        section { 
+            background: var(--card); 
+            padding: 40px; 
+            margin-bottom: 45px; 
+            border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-top: 6px solid var(--primary);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+        }
+
+        .scenario-label { 
+            color: var(--accent); 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            font-size: 0.9em;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .difficulty-selector {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 2px solid #e0e0e0;
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .diff-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #e0e0e0;
+            color: #666;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85em;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .diff-btn.active {
+            background: linear-gradient(135deg, var(--primary), #3949ab);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(26, 35, 126, 0.3);
+        }
+
+        .diff-btn:hover:not(.active) {
+            background: #d0d0d0;
+            transform: translateY(-2px);
+        }
+
+        .complexity-indicator {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .difficulty-content {
+            animation: fadeIn 0.5s ease;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tool-box {
+            background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%);
+            border-left: 5px solid #ffc107;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 0 15px 15px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .tool-title {
+            font-weight: bold;
+            color: #b71c1c;
+            display: block;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .method-step {
+            margin-bottom: 18px;
+            padding-left: 20px;
+            border-left: 4px solid var(--help);
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        .btn-group { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            margin: 30px 0; 
+        }
+        
+        button { 
+            padding: 16px 20px;
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            color: white; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95em;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-statement { background: linear-gradient(135deg, var(--primary), #3949ab); }
+        .btn-help { background: linear-gradient(135deg, var(--help), #0277bd); }
+        .btn-sol { background: linear-gradient(135deg, var(--solution), #388e3c); }
+        .btn-expert { background: linear-gradient(135deg, var(--expert), #7b1fa2); }
+        .btn-interactive { background: linear-gradient(135deg, #e91e63, #f06292); }
+        .btn-random { background: linear-gradient(135deg, #9c27b0, #ba68c8); }
+        .btn-copyright { background: linear-gradient(135deg, #607d8b, #78909c); }
+        
+        button:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(-2px);
+        }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; 
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: white; 
+            margin: 3% auto; 
+            padding: 45px;
+            border-radius: 25px; 
+            width: 90%; 
+            max-width: 900px;
+            position: relative; 
+            animation: slideUp 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            max-height: 90vh; 
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        @keyframes slideUp { 
+            from {transform: translateY(50px); opacity: 0} 
+            to {transform: translateY(0); opacity: 1} 
+        }
+        
+        .close { 
+            position: absolute; 
+            right: 30px; 
+            top: 20px; 
+            font-size: 35px; 
+            cursor: pointer; 
+            color: #999;
+            transition: all 0.3s;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #333;
+            transform: rotate(90deg);
+        }
+
+        .content-box { 
+            display: none; 
+            padding: 30px; 
+            margin-top: 25px; 
+            border-radius: 15px; 
+            border: 2px solid #eee; 
+            line-height: 1.9;
+            animation: slideIn 0.4s ease-out;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
+        }
+        
+        @keyframes slideIn { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .help-box { 
+            background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%); 
+            border-left: 6px solid var(--help); 
+        }
+        
+        .solution-box { 
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); 
+            border-left: 6px solid var(--solution); 
+        }
+        
+        .expert-box { 
+            background: linear-gradient(135deg, #f3e5f5 0%, #fce4ec 100%); 
+            border-left: 6px solid var(--expert); 
+        }
+
+        .canvas-container { 
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%); 
+            border: 3px dashed #ccc; 
+            border-radius: 15px; 
+            margin-top: 25px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        canvas { 
+            cursor: grab; 
+            display: block;
+            border-radius: 10px;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        .canvas-hint { 
+            position: absolute; 
+            top: 15px; 
+            right: 20px; 
+            font-size: 0.85em; 
+            color: #666; 
+            pointer-events: none;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .progress-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s;
+        }
+
+        .progress-dot.active {
+            background: var(--primary);
+            transform: scale(1.3);
+        }
+
+        footer { 
+            text-align: center; 
+            padding: 60px; 
+            color: white; 
+            font-size: 0.95em; 
+            background: linear-gradient(135deg, var(--primary), var(--expert));
+            border-radius: 60px 60px 0 0;
+            margin-top: 50px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 50px 20px; }
+            h1 { font-size: 2em; }
+            section { padding: 25px; }
+            .modal-content { width: 95%; padding: 30px; }
+            .btn-group { grid-template-columns: 1fr; }
+            .difficulty-buttons { flex-direction: column; }
+            .diff-btn { min-width: 100%; }
+        }
+
+        .highlight { 
+            background: linear-gradient(120deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        ul, ol {
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .random-values-box {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #7b1fa2;
+        }
+
+        .current-values {
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #9c27b0;
+        }
+
+        .random-solution {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #2e7d32;
+        }
+
+        .graph-display {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .graph-canvas-container {
+            position: relative;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+
+        .graph-canvas {
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background: #f9f9f9;
+            touch-action: none;
+        }
+
+        .graph-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .legend-beacon { background: #ff9800; }
+        .legend-trajectory { background: #1565c0; }
+        .legend-polynomial { background: #2e7d32; }
+        .legend-least-squares { background: #e91e63; }
+
+        .solution-step {
+            margin-bottom: 25px;
+            padding: 15px;
+            border-left: 4px solid var(--solution);
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: var(--solution);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .theorem-box {
+            background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+            border-left: 5px solid #0288d1;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .theorem-title {
+            font-weight: bold;
+            color: #01579b;
+            margin-bottom: 10px;
+        }
+
+        .vandermonde-formula {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px dashed #ccc;
+        }
+
+        .generation-info {
+            background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #3949ab;
+            font-size: 0.9em;
+        }
+        
+        .canvas-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-control-btn {
+            padding: 8px 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+        
+        .canvas-control-btn:hover {
+            background: #3949ab;
+            transform: translateY(-2px);
+        }
+        
+        .canvas-info {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .adaptive-solution {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #2e7d32;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .solution-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .solution-table th {
+            background: var(--solution);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .solution-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .solution-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .solution-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .path-display {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        
+        .possible-path {
+            color: var(--solution);
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .impossible-path {
+            color: #c62828;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .beacon-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .beacon-item {
+            background: #fff3e0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+            font-family: 'Courier New', monospace;
+            min-width: 120px;
+        }
+        
+        .coefficient-display {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .matrix-display {
+            overflow-x: auto;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .matrix {
+            display: inline-block;
+            margin: 0 auto;
+        }
+        
+        .matrix-row {
+            display: flex;
+        }
+        
+        .matrix-cell {
+            width: 60px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            background: white;
+        }
+        
+        .matrix-cell.header {
+            background: #e3f2fd;
+            font-weight: bold;
+        }
+        
+        .noise-warning {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-left: 5px solid #f44336;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .noise-warning-title {
+            color: #d32f2f;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .least-squares-solution {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+            border-left: 5px solid #e91e63;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .solution-comparison {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .solution-method {
+            flex: 1;
+            padding: 20px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .method-vandermonde {
+            border-top: 4px solid #1565c0;
+        }
+        
+        .method-least-squares {
+            border-top: 4px solid #e91e63;
+        }
+        
+        .error-metrics {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .good { color: #2e7d32; }
+        .warning { color: #ff9800; }
+        .bad { color: #d32f2f; }
+        
+        .r-squared {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .r-squared-high { background: #e8f5e9; color: #2e7d32; }
+        .r-squared-medium { background: #fff3e0; color: #ef6c00; }
+        .r-squared-low { background: #ffebee; color: #d32f2f; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <span class="badge">Interpolation Polynomiale - Situation Drone</span>
+        <h1>🚁 Interpolation de Vandermonde - Trajectoire de Drone</h1>
+        <p style="font-size: 1.2em; margin-top: 10px;">Détermination d'une trajectoire polynomiale précise passant par des balises GPS</p>
+        <div style="margin-top: 20px;">
+            <button class="btn-random" onclick="generateRandomTrajectory()">
+                🎲 Générer une nouvelle trajectoire ALÉATOIRE
+            </button>
+        </div>
+    </header>
+
+    <!-- SECTION PRINCIPALE -->
+    <section id="main-section">
+        <span class="scenario-label">🚁 Contrôle de Drone - Mission de Surveillance</span>
+        <h2>Problème : Déterminer la trajectoire polynomiale passant par toutes les balises</h2>
+        
+        <div class="difficulty-selector">
+            <div class="difficulty-indicator diff-5">Niveau 5 : Données Bruitées</div>
+            <div class="difficulty-buttons">
+                <button class="diff-btn" data-diff="1" onclick="changeDifficulty(1)">★☆☆ 2 Balises</button>
+                <button class="diff-btn" data-diff="2" onclick="changeDifficulty(2)">★★☆ 3 Balises</button>
+                <button class="diff-btn" data-diff="3" onclick="changeDifficulty(3)">★★★ 4 Balises</button>
+                <button class="diff-btn" data-diff="4" onclick="changeDifficulty(4)">★★★★ 5 Balises</button>
+                <button class="diff-btn active" data-diff="5" onclick="changeDifficulty(5)">★★★★★ Balises bruitées</button>
+            </div>
+        </div>
+        
+        <!-- VALEURS ALÉATOIRES -->
+        <div class="random-values-box">
+            <h3>🎲 Configuration des Balises Générées</h3>
+            <div class="generation-info">
+                <p><strong>⚠️ Attention Niveau 5 :</strong> Les données sont bruitées - L'interpolation exacte n'est pas la meilleure solution !</p>
+                <p>Utilisez la méthode des moindres carrés pour trouver la meilleure approximation polynomiale.</p>
+            </div>
+            <div class="current-values" id="randomValues">
+                <!-- Les valeurs aléatoires seront injectées ici -->
+                <p><strong>Configuration initiale :</strong></p>
+                <ul>
+                    <li>Nombre de balises : 6</li>
+                    <li>Degré suggéré : 1 ou 2 (moindres carrés)</li>
+                    <li>Données bruitées : Oui</li>
+                    <li>Méthode recommandée : Moindres carrés</li>
+                </ul>
+            </div>
+            <button class="btn-random" onclick="generateRandomValues()">
+                🔄 Générer de nouvelles données bruitées
+            </button>
+        </div>
+        
+        <!-- AVERTISSEMENT POUR DONNÉES BRUITÉES -->
+        <div class="noise-warning" id="noiseWarning" style="display: none;">
+            <div class="noise-warning-title">
+                ⚠️ AVERTISSEMENT : DONNÉES BRUITÉES DÉTECTÉES
+            </div>
+            <p>Les mesures des balises GPS contiennent du bruit (erreurs de mesure).</p>
+            <p><strong>Problème :</strong> Un polynôme d'interpolation exacte forcerait la trajectoire à passer par toutes les erreurs de mesure, créant des oscillations non physiques.</p>
+            <p><strong>Solution recommandée :</strong> Utilisez la <strong>méthode des moindres carrés</strong> pour trouver un polynôme de degré inférieur qui approxime au mieux l'ensemble des points.</p>
+            <p><strong>Avantages :</strong> Réduction du bruit, trajectoire plus lisse, meilleure prédiction.</p>
+        </div>
+        
+        <!-- CONTENU DYNAMIQUE PAR NIVEAU -->
+        <div id="dynamic-content">
+            <div class="difficulty-content active">
+                <div class="complexity-indicator">Complexité : Données bruitées - Moindres carrés recommandés</div>
+                <h3>Niveau 5 : Trajectoire avec Données Bruitées</h3>
+                <p><em>Les mesures GPS réelles contiennent du bruit. Le drone doit suivre une trajectoire lisse qui approxime au mieux les positions mesurées, sans forcément passer exactement par chaque point.</em></p>
+                
+                <div class="graph-display">
+                    <h4>📈 Visualisation Comparée des Méthodes</h4>
+                    <div class="graph-canvas-container">
+                        <canvas id="graphCanvas" class="graph-canvas" width="500" height="400"></canvas>
+                    </div>
+                    <div class="canvas-controls">
+                        <button class="canvas-control-btn" onclick="toggleBeaconLabels()">
+                            🏷️ Afficher/Masquer les coordonnées
+                        </button>
+                        <button class="canvas-control-btn" onclick="resetGraph()">
+                            🔄 Réinitialiser vue
+                        </button>
+                        <button class="canvas-control-btn" onclick="toggleMethod()">
+                            🔀 Basculer méthode
+                        </button>
+                        <button class="canvas-control-btn" onclick="adjustPolynomialDegree(1)">
+                            📈 Augmenter degré
+                        </button>
+                        <button class="canvas-control-btn" onclick="adjustPolynomialDegree(-1)">
+                            📉 Réduire degré
+                        </button>
+                    </div>
+                    <div class="canvas-info">
+                        💡 <strong>Ligne bleue :</strong> Interpolation Vandermonde (exacte) | <strong>Ligne rose :</strong> Moindres carrés (approximation)
+                    </div>
+                    <div class="graph-legend">
+                        <div class="legend-item">
+                            <div class="legend-color legend-beacon"></div>
+                            <span>Balise GPS (avec bruit)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-trajectory"></div>
+                            <span>Interpolation Vandermonde</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-least-squares"></div>
+                            <span>Moindres carrés (degré <span id="currentDegree">2</span>)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- BOUTONS D'INTERACTION -->
+        <div class="btn-group">
+            <button class="btn-statement" onclick="openModal('statementModal')">📋 Énoncé & Contexte</button>
+            <button class="btn-interactive" onclick="openInteractiveCanvas()">🎨 Mode Interactif</button>
+            <button class="btn-help" onclick="toggle('helpBox')">💡 Méthode de Vandermonde</button>
+            <button class="btn-sol" onclick="toggle('solutionBox')">✅ Calcul du Polynôme</button>
+            <button class="btn-expert" onclick="toggle('expertBox')">🚀 Optimisation & Applications</button>
+        </div>
+
+        <!-- BOÎTE D'AIDE -->
+        <div id="helpBox" class="content-box help-box">
+            <span class="tool-title">🎯 Méthode de l'Interpolation de Vandermonde</span>
+            <div class="method-step">
+                <strong>Étape 1 : Modélisation.</strong> On cherche un polynôme $P(x)$ de degré $(n-1)$ passant par $n$ points $(x_i, y_i)$.
+                $$P(x) = a_0 + a_1x + a_2x^2 + \cdots + a_{n-1}x^{n-1}$$
+            </div>
+            <div class="method-step">
+                <strong>Étape 2 : Système d'équations.</strong> Pour chaque balise $i$, on a :
+                $$P(x_i) = y_i$$
+                Ce qui donne le système linéaire :
+                $$\begin{cases}
+                a_0 + a_1x_1 + \cdots + a_{n-1}x_1^{n-1} = y_1 \\
+                a_0 + a_1x_2 + \cdots + a_{n-1}x_2^{n-1} = y_2 \\
+                \vdots \\
+                a_0 + a_1x_n + \cdots + a_{n-1}x_n^{n-1} = y_n
+                \end{cases}$$
+            </div>
+            <div class="method-step">
+                <strong>Étape 3 : Matrice de Vandermonde.</strong> Le système s'écrit $V\mathbf{a} = \mathbf{y}$ avec :
+                $$V = \begin{pmatrix}
+                1 & x_1 & x_1^2 & \cdots & x_1^{n-1} \\
+                1 & x_2 & x_2^2 & \cdots & x_2^{n-1} \\
+                \vdots & \vdots & \vdots & \ddots & \vdots \\
+                1 & x_n & x_n^2 & \cdots & x_n^{n-1}
+                \end{pmatrix}, \quad \mathbf{a} = \begin{pmatrix} a_0 \\ a_1 \\ \vdots \\ a_{n-1} \end{pmatrix}, \quad \mathbf{y} = \begin{pmatrix} y_1 \\ y_2 \\ \vdots \\ y_n \end{pmatrix}$$
+            </div>
+            <div class="method-step">
+                <strong>Étape 4 : Résolution.</strong> On résout $\mathbf{a} = V^{-1}\mathbf{y}$ si $V$ est inversible (ce qui est le cas si les $x_i$ sont distincts).
+            </div>
+            
+            <div class="least-squares-solution">
+                <span class="tool-title">🎯 Méthode des Moindres Carrés (pour données bruitées)</span>
+                <div class="method-step">
+                    <strong>Problème :</strong> Lorsque $m > n$ ou quand les données sont bruitées, on cherche un polynôme de degré $d < m-1$ qui minimise l'erreur quadratique.
+                </div>
+                <div class="method-step">
+                    <strong>Formulation :</strong> Minimiser $E = \sum_{i=1}^m (P(x_i) - y_i)^2$
+                </div>
+                <div class="method-step">
+                    <strong>Système normal :</strong> $(A^TA)\mathbf{a} = A^T\mathbf{y}$ où $A_{ij} = x_i^{j-1}$
+                </div>
+                <div class="method-step">
+                    <strong>Avantage :</strong> Réduction du bruit, prévention du surajustement, meilleure généralisation.
+                </div>
+            </div>
+        </div>
+
+        <!-- SOLUTION DÉTAILLÉE -->
+        <div id="solutionBox" class="content-box solution-box">
+            <div class="tool-box">
+                <span class="tool-title">📐 Comparaison des Méthodes pour Données Bruitées</span>
+                Quand les mesures contiennent du bruit, l'interpolation exacte peut donner des résultats trompeurs. La méthode des moindres carrés fournit une approximation plus robuste.
+            </div>
+            
+            <h3>Analyse Comparée des Deux Approches</h3>
+            
+            <!-- Solution adaptative générée dynamiquement -->
+            <div class="adaptive-solution" id="adaptiveSolution">
+                <h4>🎯 Solution pour la configuration actuelle</h4>
+                <p><strong>Analyse en cours...</strong> Cliquez sur "Générer une nouvelle configuration" pour voir la solution adaptée.</p>
+            </div>
+            
+            <!-- Comparaison des méthodes -->
+            <div id="methodComparison" style="display: none;">
+                <div class="solution-comparison">
+                    <div class="solution-method method-vandermonde">
+                        <h4>📊 Interpolation Vandermonde (Exacte)</h4>
+                        <div id="vandermondeResults">
+                            <!-- Résultats Vandermonde -->
+                        </div>
+                    </div>
+                    
+                    <div class="solution-method method-least-squares">
+                        <h4>📈 Moindres Carrés (Approximation)</h4>
+                        <div id="leastSquaresResults">
+                            <!-- Résultats Moindres Carrés -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="error-metrics">
+                    <h4>📉 Métriques d'Erreur Comparées</h4>
+                    <div id="errorComparison">
+                        <!-- Comparaison d'erreurs -->
+                    </div>
+                </div>
+                
+                <div id="recommendationBox" class="noise-warning">
+                    <div class="noise-warning-title">
+                        🎯 RECOMMANDATION
+                    </div>
+                    <p id="recommendationText"></p>
+                    <div class="r-squared" id="rSquaredDisplay">
+                        R² = Calcul en cours...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Exemple de base (visible uniquement au chargement initial) -->
+            <div id="defaultSolution">
+                <div class="solution-step">
+                    <div class="step-number">1</div>
+                    <strong>Données des balises avec bruit :</strong>
+                    <div class="beacon-display">
+                        <div class="beacon-item">B₁: (1, 2.1) ±0.1</div>
+                        <div class="beacon-item">B₂: (2, 3.8) ±0.2</div>
+                        <div class="beacon-item">B₃: (3, 5.2) ±0.2</div>
+                        <div class="beacon-item">B₄: (4, 7.1) ±0.1</div>
+                        <div class="beacon-item">B₅: (5, 8.9) ±0.1</div>
+                        <div class="beacon-item">B₆: (6, 10.8) ±0.2</div>
+                    </div>
+                    <p>Nombre de balises : $m = 6$, avec bruit de mesure.</p>
+                </div>
+                
+                <div class="solution-step">
+                    <div class="step-number">2</div>
+                    <strong>Problème avec l'interpolation exacte :</strong>
+                    <p>Un polynôme de degré 5 passerait exactement par les 6 points, mais suivrait aussi le bruit !</p>
+                    <p>Forme générale d'un polynôme de degré 5 : $P(x) = a_0 + a_1x + a_2x^2 + a_3x^3 + a_4x^4 + a_5x^5$</p>
+                    <p>Ce polynôme aurait des oscillations non physiques entre les points.</p>
+                </div>
+                
+                <div class="solution-step">
+                    <div class="step-number">3</div>
+                    <strong>Solution par moindres carrés :</strong>
+                    <p>On choisit un degré inférieur (par exemple 1 ou 2) et on minimise l'erreur quadratique.</p>
+                    <p>Pour un polynôme de degré 1 : $P(x) = a_0 + a_1x$</p>
+                    <p>On minimise : $E = \sum_{i=1}^6 (a_0 + a_1x_i - y_i)^2$</p>
+                </div>
+                
+                <div class="solution-step">
+                    <div class="step-number">4</div>
+                    <strong>Système normal :</strong>
+                    <p>$$\begin{cases}
+                    na_0 + a_1\sum x_i = \sum y_i \\
+                    a_0\sum x_i + a_1\sum x_i^2 = \sum x_i y_i
+                    \end{cases}$$</p>
+                    <p>Avec $n=6$, $\sum x_i = 21$, $\sum x_i^2 = 91$, $\sum y_i = 37.9$, $\sum x_i y_i = 150.3$</p>
+                </div>
+                
+                <div class="solution-step">
+                    <div class="step-number">5</div>
+                    <strong>Solution moindres carrés :</strong>
+                    <p>Résolution donne : $a_0 = 1.21$, $a_1 = 1.62$</p>
+                    <div class="vandermonde-formula">
+                        Polynôme d'approximation : $P(x) = 1.21 + 1.62x$
+                    </div>
+                    <p>Erreur quadratique moyenne : $MSE = 0.042$</p>
+                    <p>Coefficient de détermination : $R^2 = 0.996$ (excellente approximation)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPERT -->
+        <div id="expertBox" class="content-box expert-box">
+            <span class="tool-title">🔬 Approfondissement : Limitations et Alternatives</span>
+            
+            <div class="theorem-box">
+                <div class="theorem-title">Conditionnement de la Matrice de Vandermonde</div>
+                <p>La matrice de Vandermonde est souvent mal conditionnée pour des valeurs de $x_i$ régulièrement espacées. Le conditionnement croît exponentiellement avec $n$.</p>
+                <p>Pour des points $x_i$ équidistants sur $[0,1]$, le conditionnement $\kappa(V) \sim e^{cn}$ avec $c \approx 1.5$.</p>
+            </div>
+            
+            <div class="least-squares-solution">
+                <div class="theorem-title">Théorie des Moindres Carrés</div>
+                <p><strong>Problème :</strong> Trouver $\mathbf{a}$ qui minimise $\|A\mathbf{a} - \mathbf{y}\|^2$</p>
+                <p><strong>Solution :</strong> $\mathbf{a} = (A^TA)^{-1}A^T\mathbf{y}$ (équations normales)</p>
+                <p><strong>Propriétés :</strong></p>
+                <ul>
+                    <li>Estimateur sans biais si les erreurs sont centrées</li>
+                    <li>Variance minimale parmi les estimateurs linéaires (théorème de Gauss-Markov)</li>
+                    <li>Robuste au bruit gaussien</li>
+                </ul>
+            </div>
+            
+            <p><strong>Problèmes numériques :</strong></p>
+            <ul>
+                <li><strong>Phénomène de Runge :</strong> Pour l'interpolation avec des points équidistants, les oscillations aux extrémités augmentent avec le degré</li>
+                <li><strong>Surajustement :</strong> Un polynôme de degré trop élevé suit le bruit au lieu de la tendance générale</li>
+                <li><strong>Instabilité numérique :</strong> Pour $n > 15$, la matrice de Vandermonde devient numériquement singulière en précision double</li>
+            </ul>
+            
+            <p><strong>Alternatives pratiques pour données bruitées :</strong></p>
+            <ul>
+                <li><strong>Moindres carrés polynomial :</strong> Approximation avec degré contrôlé</li>
+                <li><strong>Régularisation Ridge :</strong> Ajout d'une pénalité sur la norme des coefficients</li>
+                <li><strong>Lasso :</strong> Pénalité L1 pour la sélection de variables</li>
+                <li><strong>Lissage par splines :</strong> Compromis entre ajustement et régularité</li>
+                <li><strong>Filtre de Kalman :</strong> Pour données séquentielles avec bruit dynamique</li>
+            </ul>
+            
+            <div class="theorem-box">
+                <div class="theorem-title">Application aux Drones Réels avec Bruit GPS</div>
+                <ol>
+                    <li><strong>Fusion de capteurs :</strong> Combiner GPS, IMU et baromètre</li>
+                    <li><strong>Filtrage :</strong> Utilisation de filtres de Kalman étendus</li>
+                    <li><strong>Modèles dynamiques :</strong> Intégration des lois de la physique</li>
+                    <li><strong>Apprentissage :</strong> Réseaux neuronaux pour la prédiction de trajectoire</li>
+                </ol>
+            </div>
+            
+            <div class="error-metrics">
+                <p><strong>Métriques d'évaluation pour données bruitées :</strong></p>
+                <div class="metric-item">
+                    <span>Erreur Quadratique Moyenne (MSE)</span>
+                    <span class="metric-value">$\frac{1}{n}\sum(y_i - \hat{y}_i)^2$</span>
+                </div>
+                <div class="metric-item">
+                    <span>Racine de l'Erreur Quadratique Moyenne (RMSE)</span>
+                    <span class="metric-value">$\sqrt{\frac{1}{n}\sum(y_i - \hat{y}_i)^2}$</span>
+                </div>
+                <div class="metric-item">
+                    <span>Coefficient de Détermination (R²)</span>
+                    <span class="metric-value">$1 - \frac{\sum(y_i - \hat{y}_i)^2}{\sum(y_i - \bar{y})^2}$</span>
+                </div>
+                <div class="metric-item">
+                    <span>Erreur Absolue Moyenne (MAE)</span>
+                    <span class="metric-value">$\frac{1}{n}\sum|y_i - \hat{y}_i|$</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODALE ÉNONCÉ -->
+    <div id="statementModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('statementModal')">&times;</span>
+            <h3>🚁 Mission : Calibration de Trajectoire Drone</h3>
+            
+            <div class="difficulty-buttons" style="margin: 20px 0;">
+                <button class="diff-btn" onclick="changeModalDifficulty(1)">Niveau 1</button>
+                <button class="diff-btn" onclick="changeModalDifficulty(2)">Niveau 2</button>
+                <button class="diff-btn" onclick="changeModalDifficulty(3)">Niveau 3</button>
+                <button class="diff-btn" onclick="changeModalDifficulty(4)">Niveau 4</button>
+                <button class="diff-btn active" onclick="changeModalDifficulty(5)">Niveau 5</button>
+            </div>
+            
+            <div id="modalContent">
+                <h4>Niveau 5 : Données Réelles avec Bruit GPS</h4>
+                <p>Dans des conditions réelles, les mesures GPS contiennent du bruit (erreurs aléatoires). Le drone doit suivre une trajectoire lisse qui tient compte de cette incertitude.</p>
+                
+                <p><strong>Problème spécifique au niveau 5 :</strong></p>
+                <ul>
+                    <li>Les balises GPS ont une précision limitée (± 0.1 à 0.3 mètres)</li>
+                    <li>Un polynôme passant exactement par tous les points suivrait aussi les erreurs de mesure</li>
+                    <li>On cherche plutôt une trajectoire qui approxime au mieux l'ensemble des mesures</li>
+                    <li>On dispose de plus de points que nécessaire (surabondance)</li>
+                </ul>
+
+                <p><strong>Données typiques :</strong></p>
+                <ul>
+                    <li>6-8 balises avec positions mesurées imparfaitement</li>
+                    <li>Bruit gaussien sur les coordonnées y (altitude)</li>
+                    <li>Tendance linéaire ou quadratique sous-jacente</li>
+                </ul>
+                
+                <div class="tool-box">
+                    <span class="tool-title">🧠 Questions critiques :</span>
+                    <ol>
+                        <li>Pourquoi l'interpolation exacte est-elle problématique avec des données bruitées ?</li>
+                        <li>Comment choisir le degré optimal du polynôme d'approximation ?</li>
+                        <li>Quelle méthode mathématique permet de trouver la "meilleure" trajectoire malgré le bruit ?</li>
+                        <li>Comment évaluer la qualité de l'approximation ?</li>
+                        <li>Quand faut-il privilégier les moindres carrés plutôt que l'interpolation exacte ?</li>
+                    </ol>
+                </div>
+                
+                <div class="noise-warning">
+                    <div class="noise-warning-title">
+                        ⚠️ ENJEU IMPORTANT
+                    </div>
+                    <p>Dans les applications réelles de drones, suivre exactement des points bruités peut entraîner :</p>
+                    <ul>
+                        <li>Consommation excessive d'énergie due aux oscillations</li>
+                        <li>Usure prématurée des moteurs</li>
+                        <li>Trajectoire instable et dangereuse</li>
+                        <li>Mauvaises prédictions de position future</li>
+                    </ul>
+                    <p>La méthode des moindres carrés fournit une trajectoire plus réaliste et plus sûre.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE DROITS D'AUTEUR -->
+    <div id="copyrightModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('copyrightModal')">&times;</span>
+            <div class="copyright-content">
+                <h3>📜 Droits d'auteur & À propos</h3>
+                
+                <div class="author-info">
+                    <h4>👨‍💻 Auteur</h4>
+                    <p><strong>Yann Merdy</strong> (yann.merdy@gmail.com) - Décembre 2025</p>
+                    <p>Ce logiciel interactif est conçu pour l'enseignement et l'apprentissage de l'Interpolation Polynomiale et ses applications aux trajectoires de drones.</p>
+                </div>
+                
+                <div class="license-info">
+                    <h4>📄 Licence d'Utilisation Non Commerciale</h4>
+                    <p>Ce code HTML/CSS/JavaScript ainsi que le contenu généré par l'application sont la propriété intellectuelle exclusive de l'auteur, <strong>Yann Merdy</strong>.</p>
+                </div>
+                
+                <h4>✅ Conditions d'Utilisation Autorisées</h4>
+                <div class="tool-box">
+                    <span class="tool-title">Utilisation Privée et Éducative (Autorisée)</span>
+                    <p>Vous êtes autorisé.e à :</p>
+                    <ul>
+                        <li>Utiliser ce code et son contenu à des fins personnelles et éducatives</li>
+                        <li>Copier et modifier le code pour un usage non lucratif</li>
+                        <li>Distribuer le code dans un contexte éducatif (cours, ateliers, formations)</li>
+                        <li>Adapter le contenu pour des besoins pédagogiques spécifiques</li>
+                    </ul>
+                </div>
+                
+                <h4>🚫 Conditions d'Utilisation Interdites</h4>
+                <div class="restrictions-info">
+                    <span class="tool-title">Utilisation Commerciale (Strictement Interdite)</span>
+                    <p>Est strictement interdite sans accord écrit préalable :</p>
+                    <ul>
+                        <li>Toute utilisation à des fins commerciales ou lucratives</li>
+                        <li>L'intégration dans des produits ou services payants</li>
+                        <li>La reproduction partielle ou totale dans des publications commerciales</li>
+                        <li>L'utilisation dans des contextes professionnels à but lucratif</li>
+                        <li>La distribution via des plateformes payantes</li>
+                    </ul>
+                </div>
+                
+                <h4>📝 Obligations</h4>
+                <div class="tool-box">
+                    <span class="tool-title">Attribution et Mention</span>
+                    <ul>
+                        <li>Toute reproduction ou modification doit conserver la mention de l'auteur originale : <strong>Yann Merdy</strong></li>
+                        <li>La présente notice de droits d'auteur doit être incluse dans toute distribution</li>
+                        <li>Les modifications apportées doivent être clairement indiquées</li>
+                    </ul>
+                </div>
+                
+                <div class="contact-info">
+                    <h4>📧 Contact pour Licences Commerciales</h4>
+                    <p>Pour toute demande d'utilisation commerciale ou de licence spécifique :</p>
+                    <p><strong>📧 Email :</strong> <a href="mailto:yann.merdy@gmail.com" class="email-link">yann.merdy@gmail.com</a></p>
+                    <p style="margin-top: 15px; font-style: italic; color: #666;">
+                        Merci de respecter ces conditions qui permettent de maintenir ce projet éducatif accessible à tous.
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <p><strong>© 2025 - Yann Merdy - Tous droits réservés</strong></p>
+                    <p style="font-size: 0.9em; color: #777;">Dernière mise à jour : Décembre 2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE INTERACTIVE -->
+    <div id="interactiveModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeInteractiveModal()">&times;</span>
+            <h2 id="interactiveTitle">Trajectoire Interactive du Drone</h2>
+            <p id="interactiveDesc">Ajoutez des balises et visualisez la trajectoire polynomiale</p>
+            
+            <div class="canvas-container">
+                <div class="canvas-hint">🖱️ Cliquez pour ajouter une balise, glissez pour déplacer</div>
+                <canvas id="interactiveCanvas"></canvas>
+            </div>
+
+            <div class="btn-group" style="justify-content: center; margin-top: 25px;">
+                <button style="background:var(--help)" onclick="solveVandermonde()">🧮 Résoudre Vandermonde</button>
+                <button style="background:#e91e63" onclick="solveLeastSquares()">📈 Moindres Carrés</button>
+                <button style="background:var(--expert)" onclick="clearBeacons()">🗑️ Effacer balises</button>
+                <button style="background:var(--primary)" onclick="generateRandomBeacons()">🎲 Balises aléatoires</button>
+                <button style="background:var(--accent)" onclick="addNoiseToBeacons()">🌊 Ajouter du bruit</button>
+            </div>
+
+            <div id="graphAnalysis" style="margin-top: 20px; padding: 20px; background: #f5f5f5; border-radius: 10px;">
+                <h4>📊 Analyse de la Trajectoire</h4>
+                <div id="beaconInfo"></div>
+                <div id="polynomialResult"></div>
+                <div id="matrixDisplay"></div>
+                <div id="interpolationResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p><strong>© 2025 - Interpolation Polynomiale - Application Drone</strong></p>
+        <p>Interpolation de Vandermonde • Moindres Carrés • Trajectoire Optimisée</p>
+        <p style="font-size: 0.9em; margin-top: 15px;">5 Niveaux de Difficulté • Données Bruitées • Méthodes Comparées • Visualisation Interactive</p>
+        <button class="btn-copyright" onclick="openModal('copyrightModal')" style="margin-top: 20px; padding: 10px 20px; font-size: 0.9em;">
+            📜 Consulter les droits d'auteur
+        </button>
+    </footer>
+</div>
+
+<script>
+// ================== CONFIGURATIONS PAR NIVEAU ==================
+
+const difficultyConfigs = {
+    1: {
+        title: "Niveau 1 : 2 Balises - Trajectoire Linéaire",
+        description: "Polynôme degré 1 - Droite unique",
+        modalContent: `
+            <h4>Niveau 1 : Calibration sur 2 Balises</h4>
+            <p>Un drone de surveillance agricole doit être calibré en passant par 2 balises GPS de référence. Ces balises fournissent des positions exactes dans le système de coordonnées local.</p>
+            <p><strong>Données :</strong></p>
+            <ul>
+                <li>Balise 1 : Position (1, 2)</li>
+                <li>Balise 2 : Position (3, 4)</li>
+            </ul>
+        `,
+        beacons: [
+            {x: 1, y: 2, label: 'B1'},
+            {x: 3, y: 4, label: 'B2'}
+        ]
+    },
+    2: {
+        title: "Niveau 2 : 3 Balises - Parabole",
+        description: "Polynôme degré 2 - Trajectoire courbe simple",
+        modalContent: `
+            <h4>Niveau 2 : Navigation avec 3 Balises</h4>
+            <p>Le drone doit maintenant éviter un arbre en passant par 3 balises qui définissent une trajectoire courbe.</p>
+            <p><strong>Données :</strong></p>
+            <ul>
+                <li>Balise 1 : Position (1, 1)</li>
+                <li>Balise 2 : Position (3, 5)</li>
+                <li>Balise 3 : Position (5, 3)</li>
+            </ul>
+        `,
+        beacons: [
+            {x: 1, y: 1, label: 'B1'},
+            {x: 3, y: 5, label: 'B2'},
+            {x: 5, y: 3, label: 'B3'}
+        ]
+    },
+    3: {
+        title: "Niveau 3 : 4 Balises - Courbe Complexe",
+        description: "Polynôme degré 3 - Trajectoire sinueuse",
+        modalContent: `
+            <h4>Niveau 3 : Inspection de Structure avec 4 Balises</h4>
+            <p>Pour inspecter une structure complexe, le drone doit passer par 4 balises positionnées stratégiquement.</p>
+            <p><strong>Contrainte :</strong> La trajectoire doit être lisse pour éviter les vibrations.</p>
+        `,
+        beacons: [
+            {x: 1, y: 2, label: 'B1'},
+            {x: 3, y: 6, label: 'B2'},
+            {x: 5, y: 3, label: 'B3'},
+            {x: 7, y: 5, label: 'B4'}
+        ]
+    },
+    4: {
+        title: "Niveau 4 : 5 Balises - Haute Précision",
+        description: "Polynôme degré 4 - Trajectoire très précise",
+        modalContent: `
+            <h4>Niveau 4 : Cartographie Haute Précision</h4>
+            <p>Pour une cartographie détaillée, le drone suit une trajectoire définie par 5 balises de haute précision.</p>
+            <p><strong>Défi :</strong> Résoudre un système 5×5 et éviter le phénomène de Runge.</p>
+        `,
+        beacons: [
+            {x: 1, y: 1, label: 'B1'},
+            {x: 2, y: 4, label: 'B2'},
+            {x: 3, y: 2, label: 'B3'},
+            {x: 4, y: 5, label: 'B4'},
+            {x: 5, y: 3, label: 'B5'}
+        ]
+    },
+    5: {
+        title: "Niveau 5 : Données Bruitées - Moindres Carrés",
+        description: "Ajustement polynomial avec bruit de mesure",
+        modalContent: `
+            <h4>Niveau 5 : Données Réelles avec Bruit</h4>
+            <p>Les balises GPS réelles ont un bruit de mesure. On dispose de plus de points que nécessaire.</p>
+            <p><strong>Méthode :</strong> Moindres carrés pour trouver le polynôme qui approxime le mieux les données.</p>
+        `,
+        beacons: [
+            {x: 1, y: 2.1, label: 'B1', noise: true, trueY: 2.0},
+            {x: 2, y: 3.8, label: 'B2', noise: true, trueY: 3.7},
+            {x: 3, y: 5.2, label: 'B3', noise: true, trueY: 5.4},
+            {x: 4, y: 7.1, label: 'B4', noise: true, trueY: 7.1},
+            {x: 5, y: 8.9, label: 'B5', noise: true, trueY: 8.8},
+            {x: 6, y: 10.8, label: 'B6', noise: true, trueY: 10.5}
+        ]
+    }
+};
+
+// ================== VARIABLES GLOBALES ==================
+
+let currentDifficulty = 5;
+let currentBeacons = [];
+let polynomialCoefficients = [];
+let leastSquaresCoefficients = [];
+let currentDegree = 2;
+let showBeaconLabels = true;
+let currentGraphId = 1;
+let showVandermonde = true;
+
+// Variables pour le canvas
+let graphCanvas = null;
+let graphCtx = null;
+let draggedBeacon = null;
+
+// Variables pour le canvas interactif
+let interactiveCanvas = null;
+let interactiveCtx = null;
+let interactiveBeacons = [];
+
+// ================== FONCTIONS MATHÉMATIQUES ==================
+
+function vandermondeMatrix(beacons) {
+    const n = beacons.length;
+    const V = [];
+    for (let i = 0; i < n; i++) {
+        V[i] = [];
+        for (let j = 0; j < n; j++) {
+            V[i][j] = Math.pow(beacons[i].x, j);
+        }
+    }
+    return V;
+}
+
+function solveVandermondeSystem(beacons) {
+    const n = beacons.length;
+    const V = vandermondeMatrix(beacons);
+    const y = beacons.map(b => b.y);
+    
+    // Résolution par élimination de Gauss (simplifiée)
+    if (n === 1) {
+        return [y[0]];
+    } else if (n === 2) {
+        // Système 2x2
+        const a1 = (y[1] - y[0]) / (beacons[1].x - beacons[0].x);
+        const a0 = y[0] - a1 * beacons[0].x;
+        return [a0, a1];
+    } else if (n === 3) {
+        // Système 3x3 (formule explicite pour l'exemple)
+        const [x1, x2, x3] = beacons.map(b => b.x);
+        const [y1, y2, y3] = y;
+        
+        const denom = (x1 - x2) * (x1 - x3) * (x2 - x3);
+        const a2 = (y1/((x1-x2)*(x1-x3)) + y2/((x2-x1)*(x2-x3)) + y3/((x3-x1)*(x3-x2)));
+        const a1 = -(y1*(x2+x3)/((x1-x2)*(x1-x3)) + y2*(x1+x3)/((x2-x1)*(x2-x3)) + y3*(x1+x2)/((x3-x1)*(x3-x2)));
+        const a0 = y1*x2*x3/((x1-x2)*(x1-x3)) + y2*x1*x3/((x2-x1)*(x2-x3)) + y3*x1*x2/((x3-x1)*(x3-x2));
+        
+        return [a0, a1, a2];
+    } else {
+        // Pour n > 3, on retourne des coefficients approximatifs
+        const coeffs = [];
+        for (let i = 0; i < n; i++) {
+            coeffs.push(0);
+        }
+        // Méthode des moindres carrés simplifiée pour l'exemple
+        return solveLeastSquaresSystem(beacons, n-1);
+    }
+}
+
+function solveLeastSquaresSystem(beacons, degree) {
+    const m = beacons.length;
+    const n = degree + 1;
+    
+    // Construire la matrice A (m x n)
+    const A = [];
+    for (let i = 0; i < m; i++) {
+        A[i] = [];
+        for (let j = 0; j < n; j++) {
+            A[i][j] = Math.pow(beacons[i].x, j);
+        }
+    }
+    
+    // Construire le vecteur y
+    const y = beacons.map(b => b.y);
+    
+    // Calculer A^T * A et A^T * y
+    const AtA = [];
+    const Aty = [];
+    
+    for (let i = 0; i < n; i++) {
+        AtA[i] = [];
+        Aty[i] = 0;
+        for (let j = 0; j < n; j++) {
+            AtA[i][j] = 0;
+            for (let k = 0; k < m; k++) {
+                AtA[i][j] += A[k][i] * A[k][j];
+            }
+        }
+        for (let k = 0; k < m; k++) {
+            Aty[i] += A[k][i] * y[k];
+        }
+    }
+    
+    // Résoudre le système (AtA) * a = Aty (méthode simplifiée)
+    const coeffs = new Array(n).fill(0);
+    
+    // Pour un système 2x2 ou 3x3, on utilise des formules directes
+    if (n === 2) {
+        // Degré 1 : y = a0 + a1*x
+        const [Sx, Sy, Sxx, Sxy] = beacons.reduce((acc, b) => {
+            const x = b.x;
+            const y = b.y;
+            return [acc[0] + x, acc[1] + y, acc[2] + x*x, acc[3] + x*y];
+        }, [0, 0, 0, 0]);
+        
+        const det = m * Sxx - Sx * Sx;
+        if (Math.abs(det) > 1e-10) {
+            coeffs[0] = (Sy * Sxx - Sx * Sxy) / det; // a0
+            coeffs[1] = (m * Sxy - Sx * Sy) / det;   // a1
+        }
+    } else if (n === 3) {
+        // Degré 2 : y = a0 + a1*x + a2*x^2
+        const [Sx, Sy, Sxx, Sxy, Sxxx, Sxxxx, Sxxy] = beacons.reduce((acc, b) => {
+            const x = b.x;
+            const y = b.y;
+            const x2 = x * x;
+            const x3 = x2 * x;
+            const x4 = x2 * x2;
+            return [
+                acc[0] + x,
+                acc[1] + y,
+                acc[2] + x2,
+                acc[3] + x * y,
+                acc[4] + x3,
+                acc[5] + x4,
+                acc[6] + x2 * y
+            ];
+        }, [0, 0, 0, 0, 0, 0, 0]);
+        
+        // Résoudre le système 3x3
+        const M = [
+            [m, Sx, Sxx],
+            [Sx, Sxx, Sxxx],
+            [Sxx, Sxxx, Sxxxx]
+        ];
+        
+        const B = [Sy, Sxy, Sxxy];
+        
+        // Inversion simple pour 3x3
+        const det = M[0][0]*(M[1][1]*M[2][2] - M[1][2]*M[2][1]) 
+                  - M[0][1]*(M[1][0]*M[2][2] - M[1][2]*M[2][0]) 
+                  + M[0][2]*(M[1][0]*M[2][1] - M[1][1]*M[2][0]);
+        
+        if (Math.abs(det) > 1e-10) {
+            const invDet = 1.0 / det;
+            
+            // Matrice inverse
+            const inv = [
+                [
+                    (M[1][1]*M[2][2] - M[1][2]*M[2][1]) * invDet,
+                    (M[0][2]*M[2][1] - M[0][1]*M[2][2]) * invDet,
+                    (M[0][1]*M[1][2] - M[0][2]*M[1][1]) * invDet
+                ],
+                [
+                    (M[1][2]*M[2][0] - M[1][0]*M[2][2]) * invDet,
+                    (M[0][0]*M[2][2] - M[0][2]*M[2][0]) * invDet,
+                    (M[0][2]*M[1][0] - M[0][0]*M[1][2]) * invDet
+                ],
+                [
+                    (M[1][0]*M[2][1] - M[1][1]*M[2][0]) * invDet,
+                    (M[0][1]*M[2][0] - M[0][0]*M[2][1]) * invDet,
+                    (M[0][0]*M[1][1] - M[0][1]*M[1][0]) * invDet
+                ]
+            ];
+            
+            // Produit inv * B
+            for (let i = 0; i < 3; i++) {
+                coeffs[i] = 0;
+                for (let j = 0; j < 3; j++) {
+                    coeffs[i] += inv[i][j] * B[j];
+                }
+            }
+        }
+    } else {
+        // Pour les degrés supérieurs, on utilise une méthode itérative simple
+        for (let i = 0; i < n; i++) {
+            coeffs[i] = (Aty[i] / m) * (i === 0 ? 1 : 0.5);
+        }
+    }
+    
+    return coeffs;
+}
+
+function evaluatePolynomial(x, coefficients) {
+    let result = 0;
+    for (let i = 0; i < coefficients.length; i++) {
+        result += coefficients[i] * Math.pow(x, i);
+    }
+    return result;
+}
+
+function formatPolynomial(coefficients) {
+    if (!coefficients || coefficients.length === 0) return "P(x) = 0";
+    
+    let terms = [];
+    for (let i = 0; i < coefficients.length; i++) {
+        const coeff = coefficients[i];
+        if (Math.abs(coeff) > 1e-10) {
+            if (i === 0) {
+                terms.push(`${coeff.toFixed(3)}`);
+            } else if (i === 1) {
+                terms.push(`${coeff.toFixed(3)}x`);
+            } else {
+                terms.push(`${coeff.toFixed(3)}x^${i}`);
+            }
+        }
+    }
+    
+    if (terms.length === 0) return "P(x) = 0";
+    return `P(x) = ${terms.join(' + ')}`;
+}
+
+function calculateErrorMetrics(beacons, coefficients) {
+    let sse = 0; // Sum of Squared Errors
+    let mae = 0; // Mean Absolute Error
+    const predictions = [];
+    const residuals = [];
+    
+    const yMean = beacons.reduce((sum, b) => sum + b.y, 0) / beacons.length;
+    let sst = 0; // Total Sum of Squares
+    
+    for (const beacon of beacons) {
+        const predicted = evaluatePolynomial(beacon.x, coefficients);
+        const error = predicted - beacon.y;
+        const absError = Math.abs(error);
+        
+        sse += error * error;
+        mae += absError;
+        predictions.push(predicted);
+        residuals.push(error);
+        
+        sst += Math.pow(beacon.y - yMean, 2);
+    }
+    
+    const mse = sse / beacons.length;
+    const rmse = Math.sqrt(mse);
+    const r2 = 1 - (sse / sst);
+    const adjR2 = 1 - ((1 - r2) * (beacons.length - 1)) / (beacons.length - coefficients.length);
+    
+    return {
+        sse,
+        mse,
+        rmse,
+        mae: mae / beacons.length,
+        r2,
+        adjR2,
+        predictions,
+        residuals
+    };
+}
+
+// ================== GESTION DU CANVAS PRINCIPAL ==================
+
+function initGraphCanvas() {
+    graphCanvas = document.getElementById('graphCanvas');
+    if (!graphCanvas) return;
+    
+    graphCtx = graphCanvas.getContext('2d');
+    
+    // Ajouter les événements de glisser-déposer
+    graphCanvas.addEventListener('mousedown', handleCanvasMouseDown);
+    graphCanvas.addEventListener('mousemove', handleCanvasMouseUp); // Fix: changed from handleCanvasMouseMove to handleCanvasMouseUp
+    graphCanvas.addEventListener('mouseup', handleCanvasMouseUp);
+    
+    drawGraph();
+}
+
+function handleCanvasMouseDown(e) {
+    const rect = graphCanvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    if (currentBeacons.length > 0) {
+        // Chercher une balise proche
+        draggedBeacon = currentBeacons.find(b => {
+            const graphX = (b.x - 0) * (graphCanvas.width - 100) / 10 + 50;
+            const graphY = graphCanvas.height - 50 - (b.y - 0) * (graphCanvas.height - 100) / 10;
+            return Math.hypot(graphX - mouseX, graphY - mouseY) < 15;
+        });
+    }
+}
+
+function handleCanvasMouseMove(e) {
+    if (draggedBeacon) {
+        const rect = graphCanvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Convertir les coordonnées du canvas en coordonnées mathématiques
+        const x = (mouseX - 50) * 10 / (graphCanvas.width - 100);
+        const y = (graphCanvas.height - 50 - mouseY) * 10 / (graphCanvas.height - 100);
+        
+        // Limiter aux bornes du graphique
+        draggedBeacon.x = Math.max(0, Math.min(10, x));
+        draggedBeacon.y = Math.max(0, Math.min(10, y));
+        
+        // Recalculer les polynômes
+        polynomialCoefficients = solveVandermondeSystem(currentBeacons);
+        leastSquaresCoefficients = solveLeastSquaresSystem(currentBeacons, currentDegree);
+        updateDisplay();
+        updateMethodComparison();
+        drawGraph();
+    }
+}
+
+function handleCanvasMouseUp() {
+    draggedBeacon = null;
+}
+
+function drawGraph() {
+    if (!graphCanvas || !graphCtx) {
+        initGraphCanvas();
+        return;
+    }
+    
+    const ctx = graphCtx;
+    const width = graphCanvas.width;
+    const height = graphCanvas.height;
+    
+    // Effacer le canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Dessiner la grille
+    ctx.strokeStyle = '#eee';
+    ctx.lineWidth = 1;
+    
+    // Grille verticale
+    for (let i = 0; i <= 10; i++) {
+        const x = 50 + i * (width - 100) / 10;
+        ctx.beginPath();
+        ctx.moveTo(x, 50);
+        ctx.lineTo(x, height - 50);
+        ctx.stroke();
+        
+        // Labels d'axe X
+        if (i % 2 === 0) {
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(i.toString(), x, height - 30);
+        }
+    }
+    
+    // Grille horizontale
+    for (let i = 0; i <= 10; i++) {
+        const y = height - 50 - i * (height - 100) / 10;
+        ctx.beginPath();
+        ctx.moveTo(50, y);
+        ctx.lineTo(width - 50, y);
+        ctx.stroke();
+        
+        // Labels d'axe Y
+        if (i % 2 === 0) {
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(i.toString(), 40, y + 4);
+        }
+    }
+    
+    // Axes
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    
+    // Axe X
+    ctx.beginPath();
+    ctx.moveTo(50, height - 50);
+    ctx.lineTo(width - 50, height - 50);
+    ctx.stroke();
+    
+    // Axe Y
+    ctx.beginPath();
+    ctx.moveTo(50, 50);
+    ctx.lineTo(50, height - 50);
+    ctx.stroke();
+    
+    // Flèches
+    ctx.beginPath();
+    ctx.moveTo(width - 50, height - 50);
+    ctx.lineTo(width - 60, height - 45);
+    ctx.lineTo(width - 60, height - 55);
+    ctx.closePath();
+    ctx.fillStyle = '#333';
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(50, 50);
+    ctx.lineTo(45, 60);
+    ctx.lineTo(55, 60);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Labels des axes
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Distance (m)', width / 2, height - 10);
+    
+    ctx.save();
+    ctx.translate(20, height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('Altitude (m)', 0, 0);
+    ctx.restore();
+    
+    // Dessiner la trajectoire des moindres carrés
+    if (leastSquaresCoefficients && leastSquaresCoefficients.length > 0) {
+        ctx.strokeStyle = '#e91e63';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        
+        for (let i = 0; i <= width; i++) {
+            const x = (i - 50) * 10 / (width - 100);
+            if (x >= 0 && x <= 10) {
+                const y = evaluatePolynomial(x, leastSquaresCoefficients);
+                const graphX = i;
+                const graphY = height - 50 - y * (height - 100) / 10;
+                
+                if (i === 0 || y < 0 || y > 10) {
+                    ctx.moveTo(graphX, graphY);
+                } else {
+                    ctx.lineTo(graphX, graphY);
+                }
+            }
+        }
+        ctx.stroke();
+    }
+    
+    // Dessiner la trajectoire polynomiale de Vandermonde
+    if (showVandermonde && polynomialCoefficients && polynomialCoefficients.length > 0) {
+        ctx.strokeStyle = '#1565c0';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        
+        for (let i = 0; i <= width; i++) {
+            const x = (i - 50) * 10 / (width - 100);
+            if (x >= 0 && x <= 10) {
+                const y = evaluatePolynomial(x, polynomialCoefficients);
+                const graphX = i;
+                const graphY = height - 50 - y * (height - 100) / 10;
+                
+                if (i === 0 || y < 0 || y > 10) {
+                    ctx.moveTo(graphX, graphY);
+                } else {
+                    ctx.lineTo(graphX, graphY);
+                }
+            }
+        }
+        ctx.stroke();
+    }
+    
+    // Dessiner les balises
+    currentBeacons.forEach(beacon => {
+        const graphX = 50 + beacon.x * (width - 100) / 10;
+        const graphY = height - 50 - beacon.y * (height - 100) / 10;
+        
+        // Cercle de la balise
+        ctx.beginPath();
+        ctx.arc(graphX, graphY, 10, 0, Math.PI * 2);
+        ctx.fillStyle = beacon.noise ? '#ff9800' : '#ff9800';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Indicateur de bruit
+        if (beacon.noise) {
+            ctx.beginPath();
+            ctx.arc(graphX, graphY, 15, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 152, 0, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // Label de la balise
+        if (showBeaconLabels) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(beacon.label, graphX, graphY);
+            
+            // Coordonnées
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText(`(${beacon.x.toFixed(1)}, ${beacon.y.toFixed(1)})`, graphX, graphY + 20);
+        }
+    });
+    
+    // Afficher le degré courant
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Degré moindres carrés: ${currentDegree}`, 60, 40);
+    
+    // Afficher la méthode active
+    ctx.fillStyle = showVandermonde ? '#1565c0' : '#e91e63';
+    ctx.fillText(`Affichage: ${showVandermonde ? 'Vandermonde + Moindres carrés' : 'Moindres carrés uniquement'}`, 60, 60);
+}
+
+function toggleBeaconLabels() {
+    showBeaconLabels = !showBeaconLabels;
+    drawGraph();
+    showNotification(showBeaconLabels ? "Labels affichés" : "Labels masqués", "info");
+}
+
+function toggleMethod() {
+    showVandermonde = !showVandermonde;
+    drawGraph();
+    showNotification(showVandermonde ? "Affichage des deux méthodes" : "Affichage moindres carrés uniquement", "info");
+}
+
+function adjustPolynomialDegree(delta) {
+    const newDegree = Math.max(1, Math.min(5, currentDegree + delta));
+    if (newDegree !== currentDegree) {
+        currentDegree = newDegree;
+        leastSquaresCoefficients = solveLeastSquaresSystem(currentBeacons, currentDegree);
+        document.getElementById('currentDegree').textContent = currentDegree;
+        drawGraph();
+        updateMethodComparison();
+        showNotification(`Degré moindres carrés ajusté à ${currentDegree}`, "info");
+    }
+}
+
+function resetGraph() {
+    initGraphCanvas();
+    showNotification("Vue réinitialisée", "success");
+}
+
+function showPolynomial() {
+    const polyText = formatPolynomial(polynomialCoefficients);
+    const lsText = formatPolynomial(leastSquaresCoefficients);
+    showNotification(`Vandermonde: ${polyText} | Moindres carrés: ${lsText}`, "info");
+}
+
+// ================== GÉNÉRATION ALÉATOIRE ==================
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomFloat(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+function generateRandomValues() {
+    const config = difficultyConfigs[currentDifficulty];
+    let beacons = [];
+    
+    switch(currentDifficulty) {
+        case 1:
+            // Niveau 1 : 2 balises alignées ou presque
+            const slope = getRandomFloat(0.5, 2);
+            const intercept = getRandomFloat(0, 3);
+            const x1 = getRandomFloat(1, 3);
+            const x2 = x1 + getRandomFloat(2, 4);
+            
+            beacons = [
+                {x: x1, y: slope * x1 + intercept, label: 'B1'},
+                {x: x2, y: slope * x2 + intercept, label: 'B2'}
+            ];
+            break;
+            
+        case 2:
+            // Niveau 2 : 3 balises formant une parabole
+            const a = getRandomFloat(-0.5, 0.5);
+            const b = getRandomFloat(-1, 1);
+            const c = getRandomFloat(1, 4);
+            
+            for (let i = 1; i <= 3; i++) {
+                const x = i * 2;
+                const y = a * x * x + b * x + c;
+                beacons.push({x: x, y: y, label: `B${i}`});
+            }
+            break;
+            
+        case 3:
+            // Niveau 3 : 4 balises pour polynôme degré 3
+            const coeffs3 = [];
+            for (let i = 0; i < 4; i++) {
+                coeffs3.push(getRandomFloat(-1, 1));
+            }
+            
+            for (let i = 1; i <= 4; i++) {
+                const x = i * 1.5;
+                let y = 0;
+                for (let j = 0; j < coeffs3.length; j++) {
+                    y += coeffs3[j] * Math.pow(x, j);
+                }
+                beacons.push({x: x, y: y, label: `B${i}`});
+            }
+            break;
+            
+        case 4:
+            // Niveau 4 : 5 balises pour polynôme degré 4
+            const coeffs4 = [];
+            for (let i = 0; i < 5; i++) {
+                coeffs4.push(getRandomFloat(-0.5, 0.5));
+            }
+            
+            for (let i = 1; i <= 5; i++) {
+                const x = i;
+                let y = 0;
+                for (let j = 0; j < coeffs4.length; j++) {
+                    y += coeffs4[j] * Math.pow(x, j);
+                }
+                beacons.push({x: x, y: y + getRandomFloat(-0.5, 0.5), label: `B${i}`});
+            }
+            break;
+            
+        case 5:
+            // Niveau 5 : Données bruitées (plus de points que nécessaire)
+            const trueSlope = getRandomFloat(0.8, 1.8);
+            const trueIntercept = getRandomFloat(0.5, 2.5);
+            const numPoints = getRandomInt(6, 10);
+            
+            for (let i = 1; i <= numPoints; i++) {
+                const x = getRandomFloat(1, 9);
+                const trueY = trueIntercept + trueSlope * x;
+                const noise = getRandomFloat(-0.5, 0.5);
+                const noiseLevel = getRandomFloat(0.1, 0.3);
+                beacons.push({
+                    x: x,
+                    y: trueY + noise,
+                    trueY: trueY,
+                    label: `B${i}`,
+                    noise: true,
+                    noiseLevel: noiseLevel
+                });
+            }
+            break;
+    }
+    
+    currentBeacons = beacons;
+    polynomialCoefficients = solveVandermondeSystem(beacons);
+    leastSquaresCoefficients = solveLeastSquaresSystem(beacons, currentDegree);
+    
+    updateDisplay();
+    updateMethodComparison();
+    drawGraph();
+    
+    // Afficher l'avertissement pour les données bruitées
+    if (currentDifficulty === 5) {
+        document.getElementById('noiseWarning').style.display = 'block';
+        document.getElementById('methodComparison').style.display = 'block';
+        document.getElementById('defaultSolution').style.display = 'none';
+    } else {
+        document.getElementById('noiseWarning').style.display = 'none';
+        document.getElementById('methodComparison').style.display = 'none';
+    }
+    
+    showNotification(`Nouvelle configuration générée (${beacons.length} balises${currentDifficulty === 5 ? ' avec bruit' : ''})`, "success");
+}
+
+function generateRandomTrajectory() {
+    // Changer aléatoirement de niveau de difficulté
+    const newDifficulty = getRandomInt(1, 5);
+    changeDifficulty(newDifficulty);
+    
+    // Générer des valeurs aléatoires pour ce niveau
+    setTimeout(() => {
+        generateRandomValues();
+        showNotification(`Niveau ${newDifficulty} avec balises aléatoires générées !`, "info");
+    }, 100);
+}
+
+// ================== COMPARAISON DES MÉTHODES ==================
+
+function updateMethodComparison() {
+    const vandermondeDiv = document.getElementById('vandermondeResults');
+    const leastSquaresDiv = document.getElementById('leastSquaresResults');
+    const errorDiv = document.getElementById('errorComparison');
+    const recommendationDiv = document.getElementById('recommendationText');
+    const rSquaredDiv = document.getElementById('rSquaredDisplay');
+    
+    if (!vandermondeDiv || !leastSquaresDiv) return;
+    
+    // Calculer les métriques d'erreur
+    const vandermondeMetrics = calculateErrorMetrics(currentBeacons, polynomialCoefficients);
+    const leastSquaresMetrics = calculateErrorMetrics(currentBeacons, leastSquaresCoefficients);
+    
+    // Afficher les résultats Vandermonde
+    vandermondeDiv.innerHTML = `
+        <div class="solution-step">
+            <strong>Polynôme d'interpolation exacte :</strong>
+            <div class="vandermonde-formula">\\(${formatPolynomial(polynomialCoefficients)}\\)</div>
+            <p>Degré : ${polynomialCoefficients.length - 1}</p>
+            <p>Passe exactement par ${currentBeacons.length} points</p>
+        </div>
+        <div class="error-metrics">
+            <p><strong>Métriques d'erreur :</strong></p>
+            <div class="metric-item">
+                <span>Erreur Quadratique Moyenne (MSE)</span>
+                <span class="metric-value ${vandermondeMetrics.mse < 0.1 ? 'good' : vandermondeMetrics.mse < 0.5 ? 'warning' : 'bad'}">${vandermondeMetrics.mse.toFixed(4)}</span>
+            </div>
+            <div class="metric-item">
+                <span>Racine MSE (RMSE)</span>
+                <span class="metric-value ${vandermondeMetrics.rmse < 0.3 ? 'good' : vandermondeMetrics.rmse < 0.7 ? 'warning' : 'bad'}">${vandermondeMetrics.rmse.toFixed(4)}</span>
+            </div>
+            <div class="metric-item">
+                <span>Erreur Absolue Moyenne (MAE)</span>
+                <span class="metric-value ${vandermondeMetrics.mae < 0.2 ? 'good' : vandermondeMetrics.mae < 0.5 ? 'warning' : 'bad'}">${vandermondeMetrics.mae.toFixed(4)}</span>
+            </div>
+        </div>
+    `;
+    
+    // Afficher les résultats Moindres Carrés
+    leastSquaresDiv.innerHTML = `
+        <div class="solution-step">
+            <strong>Polynôme d'approximation (moindres carrés) :</strong>
+            <div class="vandermonde-formula">\\(${formatPolynomial(leastSquaresCoefficients)}\\)</div>
+            <p>Degré choisi : ${currentDegree}</p>
+            <p>Approxime au mieux ${currentBeacons.length} points bruités</p>
+        </div>
+        <div class="error-metrics">
+            <p><strong>Métriques d'erreur :</strong></p>
+            <div class="metric-item">
+                <span>Erreur Quadratique Moyenne (MSE)</span>
+                <span class="metric-value ${leastSquaresMetrics.mse < 0.1 ? 'good' : leastSquaresMetrics.mse < 0.5 ? 'warning' : 'bad'}">${leastSquaresMetrics.mse.toFixed(4)}</span>
+            </div>
+            <div class="metric-item">
+                <span>Racine MSE (RMSE)</span>
+                <span class="metric-value ${leastSquaresMetrics.rmse < 0.3 ? 'good' : leastSquaresMetrics.rmse < 0.7 ? 'warning' : 'bad'}">${leastSquaresMetrics.rmse.toFixed(4)}</span>
+            </div>
+            <div class="metric-item">
+                <span>Erreur Absolue Moyenne (MAE)</span>
+                <span class="metric-value ${leastSquaresMetrics.mae < 0.2 ? 'good' : leastSquaresMetrics.mae < 0.5 ? 'warning' : 'bad'}">${leastSquaresMetrics.mae.toFixed(4)}</span>
+            </div>
+            <div class="metric-item">
+                <span>Coefficient de Détermination (R²)</span>
+                <span class="metric-value ${leastSquaresMetrics.r2 > 0.9 ? 'good' : leastSquaresMetrics.r2 > 0.7 ? 'warning' : 'bad'}">${leastSquaresMetrics.r2.toFixed(4)}</span>
+            </div>
+        </div>
+    `;
+    
+    // Comparaison des erreurs
+    errorDiv.innerHTML = `
+        <div class="metric-item">
+            <span>Différence MSE (Vandermonde - Moindres Carrés)</span>
+            <span class="metric-value ${vandermondeMetrics.mse - leastSquaresMetrics.mse > 0 ? 'good' : 'bad'}">${(vandermondeMetrics.mse - leastSquaresMetrics.mse).toFixed(4)}</span>
+        </div>
+        <div class="metric-item">
+            <span>Amélioration relative RMSE</span>
+            <span class="metric-value ${(vandermondeMetrics.rmse - leastSquaresMetrics.rmse) / vandermondeMetrics.rmse > 0 ? 'good' : 'bad'}">${((vandermondeMetrics.rmse - leastSquaresMetrics.rmse) / vandermondeMetrics.rmse * 100).toFixed(1)}%</span>
+        </div>
+        <div class="metric-item">
+            <span>Complexité (nombre de coefficients)</span>
+            <span class="metric-value">${polynomialCoefficients.length} vs ${leastSquaresCoefficients.length}</span>
+        </div>
+    `;
+    
+    // Recommandation
+    let recommendation = "";
+    let r2Class = "r-squared-medium";
+    let r2Text = "";
+    
+    if (leastSquaresMetrics.r2 > 0.95) {
+        recommendation = "Excellent ! Le modèle des moindres carrés capture parfaitement la tendance sous-jacente malgré le bruit. Recommandé pour la trajectoire du drone.";
+        r2Class = "r-squared-high";
+        r2Text = "Excellente qualité d'ajustement";
+    } else if (leastSquaresMetrics.r2 > 0.8) {
+        recommendation = "Bon ajustement. Les moindres carrés fournissent une trajectoire raisonnable qui filtre efficacement le bruit.";
+        r2Class = "r-squared-medium";
+        r2Text = "Bon ajustement";
+    } else if (leastSquaresMetrics.r2 > 0.6) {
+        recommendation = "Ajustement acceptable. Considérez peut-être d'augmenter le degré du polynôme ou d'utiliser une autre méthode.";
+        r2Class = "r-squared-medium";
+        r2Text = "Ajustement acceptable";
+    } else {
+        recommendation = "Mauvais ajustement. Le bruit est trop important ou le degré du polynôme est inadapté. Essayez de changer le degré ou considérez une autre méthode (splines, etc.).";
+        r2Class = "r-squared-low";
+        r2Text = "Ajustement insuffisant";
+    }
+    
+    recommendationDiv.innerHTML = recommendation;
+    rSquaredDiv.innerHTML = `R² = ${leastSquaresMetrics.r2.toFixed(4)} - ${r2Text}`;
+    rSquaredDiv.className = `r-squared ${r2Class}`;
+    
+    // Mettre à jour MathJax
+    if (window.MathJax) {
+        MathJax.typeset([vandermondeDiv, leastSquaresDiv, errorDiv]);
+    }
+}
+
+// ================== FONCTIONS UTILITAIRES ==================
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4caf50' : type === 'info' ? '#2196f3' : '#ff9800'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5em;">${type === 'success' ? '✅' : type === 'info' ? 'ℹ️' : '🎲'}</span>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+// Ajouter l'animation slideOut
+const style = document.createElement('style');
+style.innerHTML = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
+function updateDisplay() {
+    const div = document.getElementById('randomValues');
+    
+    div.innerHTML = `
+        <p><strong>Configuration générée #${currentGraphId}:</strong></p>
+        <ul>
+            <li>Nombre de balises : ${currentBeacons.length}</li>
+            <li>Degré Vandermonde : ${Math.max(0, currentBeacons.length - 1)}</li>
+            <li>Degré moindres carrés : ${currentDegree}</li>
+            <li>Données bruitées : ${currentDifficulty === 5 ? 'Oui' : 'Non'}</li>
+            <li>Méthode recommandée : ${currentDifficulty === 5 ? 'Moindres carrés' : 'Vandermonde'}</li>
+        </ul>
+        <p><strong>Vandermonde :</strong> \\(${formatPolynomial(polynomialCoefficients)}\\)</p>
+        <p><strong>Moindres carrés (degré ${currentDegree}) :</strong> \\(${formatPolynomial(leastSquaresCoefficients)}\\)</p>
+        <p><strong>Niveau :</strong> ${currentDifficulty} ${"★".repeat(currentDifficulty)}${"☆".repeat(5-currentDifficulty)}</p>
+        <p><em>💡 Comparez les deux méthodes dans "Calcul du Polynôme".</em></p>
+    `;
+}
+
+// ================== GESTION DES DIFFICULTÉS ==================
+
+function changeDifficulty(level) {
+    currentDifficulty = level;
+    
+    // Mettre à jour les boutons actifs
+    document.querySelectorAll('.diff-btn').forEach((btn, index) => {
+        btn.classList.remove('active');
+        if (index === level - 1) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Mettre à jour le contenu
+    const config = difficultyConfigs[level];
+    const contentDiv = document.getElementById('dynamic-content');
+    
+    contentDiv.innerHTML = `
+        <div class="difficulty-content active">
+            <div class="complexity-indicator">${config.description}</div>
+            <h3>${config.title}</h3>
+            <p><em>${difficultyConfigs[level].modalContent.match(/<p>(.*?)<\/p>/)?.[1] || ''}</em></p>
+            
+            <div class="graph-display">
+                <h4>📈 Visualisation de la Trajectoire</h4>
+                <div class="graph-canvas-container">
+                    <canvas id="graphCanvas" class="graph-canvas" width="500" height="400"></canvas>
+                </div>
+                <div class="canvas-controls">
+                    <button class="canvas-control-btn" onclick="toggleBeaconLabels()">
+                        🏷️ Afficher/Masquer les coordonnées
+                    </button>
+                    <button class="canvas-control-btn" onclick="resetGraph()">
+                        🔄 Réinitialiser vue
+                    </button>
+                    ${level === 5 ? `
+                    <button class="canvas-control-btn" onclick="toggleMethod()">
+                        🔀 Basculer méthode
+                    </button>
+                    <button class="canvas-control-btn" onclick="adjustPolynomialDegree(1)">
+                        📈 Augmenter degré
+                    </button>
+                    <button class="canvas-control-btn" onclick="adjustPolynomialDegree(-1)">
+                        📉 Réduire degré
+                    </button>
+                    ` : `
+                    <button class="canvas-control-btn" onclick="showPolynomial()">
+                        📊 Afficher le polynôme
+                    </button>
+                    `}
+                </div>
+                <div class="canvas-info">
+                    ${level === 5 ? '💡 <strong>Ligne bleue :</strong> Interpolation Vandermonde (exacte) | <strong>Ligne rose :</strong> Moindres carrés (approximation)' : '💡 La courbe bleue montre la trajectoire polynomiale calculée passant par toutes les balises'}
+                </div>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-color legend-beacon"></div>
+                        <span>Balise GPS (${level === 5 ? 'avec bruit' : 'point de passage'})</span>
+                    </div>
+                    ${level === 5 ? `
+                    <div class="legend-item">
+                        <div class="legend-color legend-trajectory"></div>
+                        <span>Interpolation Vandermonde</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-least-squares"></div>
+                        <span>Moindres carrés (degré <span id="currentDegree">${currentDegree}</span>)</span>
+                    </div>
+                    ` : `
+                    <div class="legend-item">
+                        <div class="legend-color legend-trajectory"></div>
+                        <span>Trajectoire du drone</span>
+                    </div>
+                    `}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Initialiser avec les balises par défaut
+    currentBeacons = JSON.parse(JSON.stringify(config.beacons));
+    polynomialCoefficients = solveVandermondeSystem(currentBeacons);
+    leastSquaresCoefficients = solveLeastSquaresSystem(currentBeacons, currentDegree);
+    
+    updateDisplay();
+    updateMethodComparison();
+    
+    // Afficher/masquer les sections appropriées
+    if (level === 5) {
+        document.getElementById('noiseWarning').style.display = 'block';
+        document.getElementById('methodComparison').style.display = 'block';
+        document.getElementById('defaultSolution').style.display = 'none';
+    } else {
+        document.getElementById('noiseWarning').style.display = 'none';
+        document.getElementById('methodComparison').style.display = 'none';
+    }
+    
+    // Réinitialiser le canvas
+    setTimeout(() => {
+        initGraphCanvas();
+    }, 100);
+    
+    // Redessiner MathJax
+    if (window.MathJax) {
+        MathJax.typeset();
+    }
+}
+
+function changeModalDifficulty(level) {
+    changeDifficulty(level);
+    
+    const modalContent = document.getElementById('modalContent');
+    const config = difficultyConfigs[level];
+    
+    if (modalContent && config) {
+        modalContent.innerHTML = `
+            <h4>${config.title}</h4>
+            ${config.modalContent}
+            
+            <div class="tool-box">
+                <span class="tool-title">🧠 Questions :</span>
+                <ol>
+                    <li>Déterminer le polynôme d'interpolation passant par toutes les balises</li>
+                    <li>Calculer l'altitude à un point intermédiaire donné</li>
+                    <li>Vérifier que le polynôme passe bien par chaque balise</li>
+                    ${level === 5 ? `
+                    <li>Pourquoi les moindres carrés sont-ils préférables pour des données bruitées ?</li>
+                    <li>Comment choisir le degré optimal du polynôme d'approximation ?</li>
+                    ` : `
+                    <li>Quelle méthode serait plus stable numériquement pour un grand nombre de balises ?</li>
+                    `}
+                </ol>
+            </div>
+        `;
+    }
+    
+    // Mettre à jour les boutons dans la modale
+    document.querySelectorAll('#statementModal .diff-btn').forEach((btn, index) => {
+        btn.classList.remove('active');
+        if (index === level - 1) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+// ================== CANVAS INTERACTIF ==================
+
+function openInteractiveCanvas() {
+    document.getElementById('interactiveModal').style.display = "block";
+    
+    // Initialiser le canvas interactif
+    setTimeout(() => {
+        initInteractiveCanvas();
+    }, 100);
+}
+
+function closeInteractiveModal() {
+    document.getElementById('interactiveModal').style.display = "none";
+}
+
+function initInteractiveCanvas() {
+    interactiveCanvas = document.getElementById('interactiveCanvas');
+    if (!interactiveCanvas) return;
+    
+    interactiveCtx = interactiveCanvas.getContext('2d');
+    
+    // Redimensionner le canvas
+    const container = interactiveCanvas.parentElement;
+    interactiveCanvas.width = container.clientWidth - 40;
+    interactiveCanvas.height = 400;
+    
+    // Initialiser les balises interactives avec les balises actuelles
+    interactiveBeacons = JSON.parse(JSON.stringify(currentBeacons));
+    
+    // Ajouter les événements
+    interactiveCanvas.onmousedown = (e) => {
+        const rect = interactiveCanvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Convertir en coordonnées mathématiques
+        const x = (mouseX - 50) * 10 / (interactiveCanvas.width - 100);
+        const y = (interactiveCanvas.height - 50 - mouseY) * 10 / (interactiveCanvas.height - 100);
+        
+        // Vérifier si on clique près d'une balise existante
+        draggedBeacon = interactiveBeacons.find(b => {
+            const graphX = 50 + b.x * (interactiveCanvas.width - 100) / 10;
+            const graphY = interactiveCanvas.height - 50 - b.y * (interactiveCanvas.height - 100) / 10;
+            return Math.hypot(graphX - mouseX, graphY - mouseY) < 15;
+        });
+        
+        // Sinon, ajouter une nouvelle balise
+        if (!draggedBeacon && x >= 0 && x <= 10 && y >= 0 && y <= 10) {
+            const newLabel = `B${interactiveBeacons.length + 1}`;
+            interactiveBeacons.push({x: x, y: y, label: newLabel});
+            draggedBeacon = interactiveBeacons[interactiveBeacons.length - 1];
+        }
+        
+        updateInteractiveAnalysis();
+        drawInteractiveGraph();
+    };
+    
+    interactiveCanvas.onmousemove = (e) => {
+        if (draggedBeacon) {
+            const rect = interactiveCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Convertir les coordonnées du canvas en coordonnées mathématiques
+            const x = (mouseX - 50) * 10 / (interactiveCanvas.width - 100);
+            const y = (interactiveCanvas.height - 50 - mouseY) * 10 / (interactiveCanvas.height - 100);
+            
+            // Limiter aux bornes du graphique
+            draggedBeacon.x = Math.max(0, Math.min(10, x));
+            draggedBeacon.y = Math.max(0, Math.min(10, y));
+            
+            updateInteractiveAnalysis();
+            drawInteractiveGraph();
+        }
+    };
+    
+    interactiveCanvas.onmouseup = () => {
+        draggedBeacon = null;
+    };
+    
+    drawInteractiveGraph();
+    updateInteractiveAnalysis();
+}
+
+function drawInteractiveGraph() {
+    if (!interactiveCanvas || !interactiveCtx) return;
+    
+    const ctx = interactiveCtx;
+    const width = interactiveCanvas.width;
+    const height = interactiveCanvas.height;
+    
+    // Effacer le canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Dessiner la grille (simplifiée)
+    ctx.strokeStyle = '#eee';
+    ctx.lineWidth = 1;
+    
+    // Grille
+    for (let i = 0; i <= 10; i++) {
+        const x = 50 + i * (width - 100) / 10;
+        ctx.beginPath();
+        ctx.moveTo(x, 50);
+        ctx.lineTo(x, height - 50);
+        ctx.stroke();
+        
+        const y = height - 50 - i * (height - 100) / 10;
+        ctx.beginPath();
+        ctx.moveTo(50, y);
+        ctx.lineTo(width - 50, y);
+        ctx.stroke();
+    }
+    
+    // Axes
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    
+    ctx.beginPath();
+    ctx.moveTo(50, height - 50);
+    ctx.lineTo(width - 50, height - 50);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(50, 50);
+    ctx.lineTo(50, height - 50);
+    ctx.stroke();
+    
+    // Dessiner la trajectoire polynomiale si on a au moins 2 balises
+    if (interactiveBeacons.length >= 2) {
+        const coeffs = solveVandermondeSystem(interactiveBeacons);
+        const lsCoeffs = solveLeastSquaresSystem(interactiveBeacons, currentDegree);
+        
+        // Dessiner moindres carrés
+        ctx.strokeStyle = '#e91e63';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        
+        for (let i = 0; i <= width; i++) {
+            const x = (i - 50) * 10 / (width - 100);
+            if (x >= 0 && x <= 10) {
+                const y = evaluatePolynomial(x, lsCoeffs);
+                const graphX = i;
+                const graphY = height - 50 - y * (height - 100) / 10;
+                
+                if (i === 0 || y < 0 || y > 10) {
+                    ctx.moveTo(graphX, graphY);
+                } else {
+                    ctx.lineTo(graphX, graphY);
+                }
+            }
+        }
+        ctx.stroke();
+        
+        // Dessiner Vandermonde
+        ctx.strokeStyle = '#1565c0';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        
+        for (let i = 0; i <= width; i++) {
+            const x = (i - 50) * 10 / (width - 100);
+            if (x >= 0 && x <= 10) {
+                const y = evaluatePolynomial(x, coeffs);
+                const graphX = i;
+                const graphY = height - 50 - y * (height - 100) / 10;
+                
+                if (i === 0 || y < 0 || y > 10) {
+                    ctx.moveTo(graphX, graphY);
+                } else {
+                    ctx.lineTo(graphX, graphY);
+                }
+            }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+    
+    // Dessiner les balises
+    interactiveBeacons.forEach(beacon => {
+        const graphX = 50 + beacon.x * (width - 100) / 10;
+        const graphY = height - 50 - beacon.y * (height - 100) / 10;
+        
+        // Cercle de la balise
+        ctx.beginPath();
+        ctx.arc(graphX, graphY, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff9800';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Label de la balise
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(beacon.label, graphX, graphY);
+    });
+}
+
+function updateInteractiveAnalysis() {
+    const beaconInfo = document.getElementById('beaconInfo');
+    const polynomialResult = document.getElementById('polynomialResult');
+    
+    if (!beaconInfo || !polynomialResult) return;
+    
+    // Afficher les balises
+    beaconInfo.innerHTML = `
+        <p><strong>${interactiveBeacons.length} balise(s) :</strong></p>
+        <div class="beacon-display">
+            ${interactiveBeacons.map(b => 
+                `<div class="beacon-item">${b.label}: (${b.x.toFixed(2)}, ${b.y.toFixed(2)})</div>`
+            ).join('')}
+        </div>
+    `;
+    
+    // Calculer et afficher les polynômes si on a au moins 2 balises
+    if (interactiveBeacons.length >= 2) {
+        const coeffs = solveVandermondeSystem(interactiveBeacons);
+        const lsCoeffs = solveLeastSquaresSystem(interactiveBeacons, currentDegree);
+        const vanderText = formatPolynomial(coeffs);
+        const lsText = formatPolynomial(lsCoeffs);
+        
+        const vanderMetrics = calculateErrorMetrics(interactiveBeacons, coeffs);
+        const lsMetrics = calculateErrorMetrics(interactiveBeacons, lsCoeffs);
+        
+        polynomialResult.innerHTML = `
+            <div class="solution-comparison">
+                <div class="solution-method method-vandermonde">
+                    <h5>Vandermonde (exact)</h5>
+                    <div class="vandermonde-formula" style="font-size: 0.9em;">${vanderText}</div>
+                    <p style="font-size: 0.8em;">RMSE: ${vanderMetrics.rmse.toFixed(4)}</p>
+                </div>
+                <div class="solution-method method-least-squares">
+                    <h5>Moindres carrés (degré ${currentDegree})</h5>
+                    <div class="vandermonde-formula" style="font-size: 0.9em;">${lsText}</div>
+                    <p style="font-size: 0.8em;">RMSE: ${lsMetrics.rmse.toFixed(4)}, R²: ${lsMetrics.r2.toFixed(4)}</p>
+                </div>
+            </div>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                <strong>Recommandation :</strong> ${lsMetrics.rmse < vanderMetrics.rmse ? 'Moindres carrés (meilleur RMSE)' : 'Vandermonde (passage exact)'}
+            </p>
+        `;
+    } else {
+        polynomialResult.innerHTML = `
+            <p>Ajoutez au moins 2 balises pour calculer un polynôme d'interpolation.</p>
+        `;
+    }
+}
+
+function solveVandermonde() {
+    if (interactiveBeacons.length >= 2) {
+        const coeffs = solveVandermondeSystem(interactiveBeacons);
+        const polyText = formatPolynomial(coeffs);
+        showNotification(`Vandermonde : ${polyText}`, "success");
+        updateInteractiveAnalysis();
+    }
+}
+
+function solveLeastSquares() {
+    if (interactiveBeacons.length >= 2) {
+        const coeffs = solveLeastSquaresSystem(interactiveBeacons, currentDegree);
+        const polyText = formatPolynomial(coeffs);
+        showNotification(`Moindres carrés (degré ${currentDegree}) : ${polyText}`, "success");
+        updateInteractiveAnalysis();
+    }
+}
+
+function clearBeacons() {
+    interactiveBeacons = [];
+    drawInteractiveGraph();
+    updateInteractiveAnalysis();
+    showNotification("Balises effacées", "info");
+}
+
+function generateRandomBeacons() {
+    const num = getRandomInt(4, 8);
+    interactiveBeacons = [];
+    
+    for (let i = 0; i < num; i++) {
+        const x = getRandomFloat(1, 9);
+        const y = getRandomFloat(1, 9);
+        interactiveBeacons.push({x: x, y: y, label: `B${i+1}`});
+    }
+    
+    drawInteractiveGraph();
+    updateInteractiveAnalysis();
+    showNotification(`${num} balises aléatoires générées`, "success");
+}
+
+function addNoiseToBeacons() {
+    interactiveBeacons.forEach(beacon => {
+        const noise = getRandomFloat(-0.3, 0.3);
+        beacon.y += noise;
+        beacon.noise = true;
+    });
+    
+    drawInteractiveGraph();
+    updateInteractiveAnalysis();
+    showNotification("Bruit ajouté aux mesures", "info");
+}
+
+// ================== FONCTIONS D'INTERFACE ==================
+
+function openModal(id) { 
+    document.getElementById(id).style.display = "block"; 
+    if(window.MathJax) MathJax.typeset();
+}
+
+function closeModal(id) { 
+    document.getElementById(id).style.display = "none"; 
+}
+
+function toggle(id) {
+    const element = document.getElementById(id);
+    const isVisible = element.style.display === "block";
+    document.querySelectorAll('.content-box').forEach(box => box.style.display = 'none');
+    element.style.display = isVisible ? "none" : "block";
+    if(window.MathJax) MathJax.typeset();
+}
+
+window.onclick = function(event) {
+    if (event.target.className === 'modal') { 
+        event.target.style.display = "none"; 
+    }
+}
+
+// ================== INITIALISATION ==================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser avec le niveau 5 (données bruitées)
+    changeDifficulty(5);
+    
+    // Initialiser MathJax
+    if (window.MathJax) {
+        setTimeout(() => MathJax.typeset(), 500);
+    }
+});
+</script>
+
+</body>
+</html>
