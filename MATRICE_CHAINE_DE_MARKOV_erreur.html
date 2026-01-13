@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulateur Markov : Fusion Ultime (Détails n=4)</title>
+    <title>Simulateur Markov : Fusion Ultime (Corrigé)</title>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         body {
@@ -284,7 +284,7 @@
         currentStates = ["A", "B", "C", "D"].slice(0, numStatesGlobal);
         
         // Valeurs aléatoires
-        targetStepN = Math.floor(Math.random() * (7 - 4 + 1)) + 4; // Limité à 7 pour que l'affichage pas à pas reste lisible
+        targetStepN = Math.floor(Math.random() * (7 - 4 + 1)) + 4; 
         let randA = Math.random() * 0.6 + 0.2; 
         paramA = parseFloat(randA.toFixed(2));
         paramB = parseFloat((1 - paramA).toFixed(2)); 
@@ -381,7 +381,7 @@
     function renderLatexMatrix() {
         let latex = (mode === 'structure') ? `M = ${paramA} I + ${paramB} J = ` : "M = ";
         latex += "\\begin{pmatrix}" + currentMatrix.map(r => r.join(" & ")).join(" \\\\ ") + "\\end{pmatrix}";
-        document.getElementById('latex-matrix').innerHTML = `\\( ${latex} \\)`;
+        document.getElementById('latex-matrix').innerHTML = `\\\( ${latex} \\\)`;
         MathJax.typeset();
     }
 
@@ -402,15 +402,6 @@
                 <button class="btn-q-sol" onclick="showDetailedSolution(${i})">Démonstration Complète</button>
             </div>
         `).join('');
-    }
-
-    function combinations(n, k) {
-        if (k < 0 || k > n) return 0;
-        let res = 1;
-        for (let i = 1; i <= k; i++) {
-            res = res * (n - (i - 1)) / i;
-        }
-        return res;
     }
     
     // NOUVELLE FONCTION POUR LE COPYRIGHT
@@ -445,9 +436,9 @@
         // --- Q1 ---
         if (index === 0) {
             if (mode === 'random') {
-                html = `<h2>1. Lecture de la Matrice (Cas Général)</h2><div class="didactic-section strat"><span class="sec-title">1. Stratégie</span><p>Lire ligne par ligne. Chaque ligne $i$ représente la distribution de probabilité partant de l'état $i$.</p></div><div class="didactic-section tools"><span class="sec-title">2. Outils</span><p>Coefficient \\(m_{ij} = P(X_{n+1}=j | X_n=i)\\).</p></div><div class="didactic-section appli"><span class="sec-title">3. Application</span><ul style="list-style:none;">${currentMatrix.map((row, i) => `<li><strong>De ${currentStates[i]} :</strong> ${row.map((v,j) => `vers ${currentStates[j]} (${(v*100).toFixed(0)}%)`).join(', ')}.</li>`).join('')}</ul></div><div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p>Matrice stochastique définie.</p></div>`;
+                html = `<h2>1. Lecture de la Matrice (Cas Général)</h2><div class="didactic-section strat"><span class="sec-title">1. Stratégie</span><p>Lire ligne par ligne. Chaque ligne \\\(i\\\) représente la distribution de probabilité partant de l'état \\\(i\\\).</p></div><div class="didactic-section tools"><span class="sec-title">2. Outils</span><p>Coefficient \\\(m_{ij} = P(X_{n+1}=j | X_n=i)\\\).</p></div><div class="didactic-section appli"><span class="sec-title">3. Application</span><ul style="list-style:none;">${currentMatrix.map((row, i) => `<li><strong>De ${currentStates[i]} :</strong> ${row.map((v,j) => `vers ${currentStates[j]} (${(v*100).toFixed(0)}%)`).join(', ')}.</li>`).join('')}</ul></div><div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p>Matrice stochastique définie.</p></div>`;
             } else { 
-                html = `<h2>1. Structure de la Matrice (\\(aI + bJ\\))</h2><div class="didactic-section strat"><span class="sec-title">1. Stratégie</span><p>Identifier la diagonale (rester) et la sur-diagonale (avancer).</p></div><div class="didactic-section tools"><span class="sec-title">2. Outils</span><p>\\(I\\) (Identité), \\(J\\) (Nilpotente).</p></div><div class="didactic-section appli"><span class="sec-title">3. Application</span><p>On lit : \\(a = ${paramA}\\) (sur la diagonale) et \\(b = ${paramB}\\) (juste au-dessus).</p></div><div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p>\\(M = ${paramA}I + ${paramB}J\\).</p></div>`;
+                html = `<h2>1. Structure de la Matrice (\\\(aI + bJ\\\))</h2><div class="didactic-section strat"><span class="sec-title">1. Stratégie</span><p>Identifier la diagonale (rester) et la sur-diagonale (avancer).</p></div><div class="didactic-section tools"><span class="sec-title">2. Outils</span><p>\\\(I\\\) (Identité), \\\(J\\\) (Nilpotente).</p></div><div class="didactic-section appli"><span class="sec-title">3. Application</span><p>On lit : \\\(a = ${paramA}\\\) (sur la diagonale) et \\\(b = ${paramB}\\\) (juste au-dessus).</p></div><div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p>\\\(M = ${paramA}I + ${paramB}J\\\).</p></div>`;
             }
         }
         
@@ -455,28 +446,29 @@
         else if (index === 1) {
             let p1 = multiplyVectorMatrix(initialVector, currentMatrix);
             html = `
-            <h2>2. Calcul Détaillé de l'état suivant (\\(P_1\\))</h2>
+            <h2>2. Calcul Détaillé de l'état suivant (\\\(P_1\\\))</h2>
             <div class="didactic-section strat">
                 <span class="sec-title">1. Stratégie</span>
-                <p>On applique le produit vecteur-matrice : \\(P_1 = P_0 \\times M\\).</p>
+                <p>On applique le produit vecteur-matrice : \\\(P_1 = P_0 \\times M\\\).</p>
+                <p>Chaque composante \\\(j\\\) de \\\(P_1\\\) est la somme pondérée : \\\( P_1[j] = \\sum_i P_0[i] \\times M_{i,j} \\\).</p>
             </div>
             <div class="didactic-section appli">
                 <span class="sec-title">3. Application (Calculs pas à pas)</span>
-                <p>État initial : \\(P_0 = [${initialVector.join(', ')}]\\)</p>
+                <p>État initial : \\\(P_0 = [${initialVector.join(', ')}]\\\)</p>
                 ${p1.map((val, j) => {
                     let formulaParts = []; let numericParts = [];
                     initialVector.forEach((v0, i) => {
                         let mij = currentMatrix[i][j];
-                        formulaParts.push(`(P_0[${currentStates[i]}] \\times M_{${currentStates[i]},${currentStates[j]}})`);
+                        // Notation : Coeff P0 * Coeff M
                         numericParts.push(`(${v0} \\times ${mij})`);
                     });
-                    return `<div class="step-calc"><strong>Vers ${currentStates[j]} :</strong><br><span class="calc-line">${numericParts.join(' + ')}</span><span class="calc-line" style="color:#2ecc71; font-weight:bold;">= ${val}</span></div>`;
+                    return `<div class="step-calc"><strong>Vers ${currentStates[j]} :</strong><br><span class="calc-line">\\(${numericParts.join(' + ')}\\)</span><span class="calc-line" style="color:#2ecc71; font-weight:bold;">= ${val}</span></div>`;
                 }).join('')}
             </div>
-            <div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p><strong>\\(P_1 = [${p1.join(', ')}]\\)</strong>.</p></div>`;
+            <div class="didactic-section concl"><span class="sec-title">4. Conclusion</span><p><strong>\\\(P_1 = [${p1.join(', ')}]\\\)</strong>.</p></div>`;
         }
 
-        // --- Q3 : DÉTAIL GAUSS (Modifié) ---
+        // --- Q3 : DÉTAIL GAUSS (CORRIGÉ TRANSPOSITION) ---
         else if (index === 2) {
             if (mode === 'random') {
                 const solutionData = solveLinearSystemWithSteps(currentMatrix);
@@ -489,22 +481,29 @@
 
                 html = `
                 <h2>3. État Stable (Résolution Détaillée par Gauss)</h2>
-                <div class="didactic-section strat"><span class="sec-title">1. Stratégie</span><p>On cherche \\(\\pi\\) invariant (\\(\\pi M = \\pi\\)) via le système homogène \\(\\pi(M - I) = 0\\), et la contrainte \\(\\sum \\pi_i = 1\\).</p></div>
+                <div class="didactic-section strat">
+                    <span class="sec-title">1. Stratégie (Attention à la Transposition)</span>
+                    <p>On cherche le vecteur ligne invariant \\\(\\pi\\\) tel que \\\(\\pi M = \\pi\\\). Cela revient à résoudre \\\(\\pi(M - I) = 0\\\).</p>
+                    <p style="color:#c0392b; font-weight:bold;">Note importante :</p>
+                    <p>Le pivot de Gauss classique résout des systèmes \\\(AX=B\\\) où \\\(X\\\) est une colonne. Pour trouver notre vecteur <strong>ligne</strong> \\\(\\pi\\\), nous devons résoudre le système <strong>transposé</strong> :</p>
+                    \\[ (M - I)^T \\cdot \\pi^T = 0 \\]
+                    <p>La matrice affichée ci-dessous sera donc la transposée de \\\(M-I\\\). Les lignes de la matrice de calcul correspondent aux <strong>colonnes</strong> de \\\(M\\\) (les équations de conservation de flux).</p>
+                </div>
                 <div class="didactic-section appli"><span class="sec-title">2. Exécution du Pivot de Gauss</span>${stepsHtml}</div>
-                <div class="didactic-section concl"><span class="sec-title">3. Résultat Final</span><div class="step-calc" style="text-align:center; font-weight:bold; font-size:1.3em;">\\(\\pi \\approx [${solutionData.res.map(x=>x.toFixed(4)).join(', ')}]\\)</div></div>`;
+                <div class="didactic-section concl"><span class="sec-title">3. Résultat Final</span><div class="step-calc" style="text-align:center; font-weight:bold; font-size:1.3em;">\\\(\\pi \\approx [${solutionData.res.map(x=>x.toFixed(4)).join(', ')}]\\\)</div></div>`;
             } else { 
                 html = `
                 <h2>3. Comportement Limite (Fuite du Système)</h2>
                 
                 <div class="didactic-section strat">
                     <span class="sec-title">1. Analyse Spectrale</span>
-                    <p>Pour déterminer le comportement à long terme (\\(n \\to \\infty\\)), nous devons analyser les <strong>valeurs propres</strong> de la matrice \\(M\\).</p>
-                    <p>Si toutes les valeurs propres \\(\\lambda\\) vérifient \\(|\\lambda| < 1\\), alors la matrice converge vers la matrice nulle (0).</p>
+                    <p>Pour déterminer le comportement à long terme (\\\(n \\to \\infty\\\)), nous analysons les <strong>valeurs propres</strong> de \\\(M\\\).</p>
+                    <p>Si toutes les valeurs propres \\\(\\lambda\\\) vérifient \\\(|\\lambda| < 1\\\), alors la matrice converge vers 0.</p>
                 </div>
 
                 <div class="didactic-section tools">
                     <span class="sec-title">2. Observation de la Matrice</span>
-                    <p>La matrice \\(M\\) est <strong>triangulaire supérieure</strong> (seuls la diagonale et la sur-diagonale sont non nulles).</p>
+                    <p>La matrice \\\(M\\\) est <strong>triangulaire supérieure</strong> (seuls la diagonale et la sur-diagonale sont non nulles).</p>
                     \\[ M = \\begin{pmatrix} a & b & 0 \\\\ 0 & a & b \\\\ 0 & 0 & a \\end{pmatrix} \\]
                     <p>Dans ce cas, les valeurs propres sont simplement les coefficients diagonaux.</p>
                 </div>
@@ -512,29 +511,29 @@
                 <div class="didactic-section appli">
                     <span class="sec-title">3. Vérification Numérique</span>
                     <ul style="list-style:none;">
-                        <li><strong>Coefficient diagonal :</strong> \\(a = ${paramA}\\)</li>
-                        <li><strong>Condition de convergence :</strong> Est-ce que \\(|${paramA}| < 1\\) ? <strong style="color:#27ae60">OUI</strong>.</li>
+                        <li><strong>Coefficient diagonal :</strong> \\\(a = ${paramA}\\\)</li>
+                        <li><strong>Condition de convergence :</strong> Est-ce que \\\(|${paramA}| < 1\\\) ? <strong style="color:#27ae60">OUI</strong>.</li>
                     </ul>
-                    <p>Puisque la valeur propre unique \\(\\lambda = ${paramA}\\) est strictement inférieure à 1, la suite géométrique \\((${paramA})^n\\) tend vers 0.</p>
+                    <p>Puisque la valeur propre unique \\\(\\lambda = ${paramA}\\\) est strictement inférieure à 1, la suite géométrique \\\((${paramA})^n\\\) tend vers 0.</p>
                 </div>
 
                 <div class="didactic-section concl">
                     <span class="sec-title">4. Interprétation Physique</span>
-                    <p>Mathématiquement : \\( \\lim_{n \\to \\infty} M^n = 0 \\).</p>
-                    <p>Physiquement : À chaque étape, ou au bout du graphe, de la probabilité "fuit" (la somme des lignes n'est pas toujours 1, ou le dernier état ne boucle pas). Finalement, la probabilité que le système soit encore dans l'un des états actifs devient nulle.</p>
+                    <p>Mathématiquement : \\\( \\lim_{n \\to \\infty} M^n = 0 \\\).</p>
+                    <p>Physiquement : À chaque étape, de la probabilité "fuit" hors du système. Finalement, la probabilité que le système soit encore dans l'un des états actifs devient nulle.</p>
                 </div>
                 `;
             }
         }
 
-        // --- Q4 : SIMULATION COMPLÈTE N ÉTAPES (Entièrement Détaillée) ---
+        // --- Q4 : SIMULATION COMPLÈTE N ÉTAPES (Détaillée) ---
         else if (index === 3) {
             let vec = [...initialVector];
             let stepsHtml = "";
 
             stepsHtml += `<div class="didactic-section strat">
                 <span class="sec-title">1. Stratégie</span>
-                <p>Pour atteindre l'étape \\(n=${targetStepN}\\), nous devons calculer successivement \\(P_1, P_2, \\dots, P_{${targetStepN}}\\). Nous utilisons la relation de récurrence : \\(P_{k} = P_{k-1} \\times M\\).</p>
+                <p>Pour atteindre l'étape \\\(n=${targetStepN}\\\), nous calculons successivement \\\(P_1, P_2, \\dots, P_{${targetStepN}}\\\) via la relation : \\\(P_{k} = P_{k-1} \\times M\\\).</p>
             </div>
             <div class="didactic-section appli">
                 <span class="sec-title">2. Exécution pas à pas</span>`;
@@ -551,17 +550,16 @@
                         let mVal = currentMatrix[i][j];
                         return `(${v} \\times ${mVal})`;
                     }).join(' + ');
-                    // CORRECTION MATHJAX ICI
-                    return `<li>Pour l'état ${currentStates[j]} : <br><span style="color:#7f8c8d; font-size:0.9em;">\\( ${calcStr} \\)</span> = <strong>${val}</strong></li>`;
+                    return `<li>Pour l'état ${currentStates[j]} : <br><span style="color:#7f8c8d; font-size:0.9em;">\\\( ${calcStr} \\\)</span> = <strong>${val}</strong></li>`;
                 }).join('');
 
                 stepsHtml += `
                     <div class="iter-step">
-                        <strong>Étape ${k} (Calcul de \\(P_{${k}}\\) à partir de \\(P_{${k-1}}\\) ) :</strong>
-                        <p>On part de \\(P_{${k-1}} = [${prevVec.join(', ')}]\\).</p>
+                        <strong>Étape ${k} (Calcul de \\\(P_{${k}}\\\) à partir de \\\(P_{${k-1}}\\\) ) :</strong>
+                        <p>On part de \\\(P_{${k-1}} = [${prevVec.join(', ')}]\\\).</p>
                         <ul style="list-style-type: none; padding-left: 10px;">${detailList}</ul>
                         <div style="text-align:center; margin-top:5px; border-top:1px solid #ddd; padding-top:5px;">
-                            \\(\\Rightarrow P_{${k}} = [${vec.join(', ')}]\\)
+                            \\\(\\Rightarrow P_{${k}} = [${vec.join(', ')}]\\\)
                         </div>
                     </div>`;
             }
@@ -571,11 +569,11 @@
                 <span class="sec-title">3. Conclusion</span>
                 <p>Au bout de ${targetStepN} étapes, la distribution de probabilité est :</p>
                 <div class="step-calc" style="text-align:center; font-size:1.2em;">
-                    \\(P_{${targetStepN}} = [${vec.join(', ')}]\\)
+                    \\\(P_{${targetStepN}} = [${vec.join(', ')}]\\\)
                 </div>
             </div>`;
 
-            html = `<h2>4. Projection détaillée à l'étape \\(n=${targetStepN}\\)</h2>` + stepsHtml;
+            html = `<h2>4. Projection détaillée à l'étape \\\(n=${targetStepN}\\\)</h2>` + stepsHtml;
         }
 
         // --- Q5 : DÉMONSTRATION COMPLÈTE (MATHS EXPERTES) ---
@@ -586,7 +584,7 @@
                 
                 <div class="didactic-section strat">
                     <span class="sec-title">1. Objectif</span>
-                    <p>Nous cherchons à démontrer que pour tout entier naturel \\(n \\in \\mathbb{N}\\), l'état probabiliste \\(P_n\\) peut être calculé directement à partir de l'état initial \\(P_0\\) et de la matrice \\(M\\) par la formule :</p>
+                    <p>Nous cherchons à démontrer que pour tout entier naturel \\\(n \\in \\mathbb{N}\\\), l'état probabiliste \\\(P_n\\\) peut être calculé directement à partir de l'état initial \\\(P_0\\\) et de la matrice \\\(M\\\) par la formule :</p>
                     <div class="step-calc" style="text-align:center; font-size:1.2em; border: 2px solid #3498db;">
                         \\[ P_n = P_0 \\times M^n \\]
                     </div>
@@ -595,9 +593,9 @@
                 <div class="didactic-section tools">
                     <span class="sec-title">2. Rappels Théoriques</span>
                     <ul class="tool-list">
-                        <li><strong>Définition d'une chaîne de Markov :</strong> L'état suivant ne dépend que de l'état actuel : \\( P_{n+1} = P_n \\times M \\).</li>
-                        <li><strong>Associativité :</strong> Le produit matriciel est associatif : \\((A \\times B) \\times C = A \\times (B \\times C)\\).</li>
-                        <li><strong>Convention :</strong> Toute matrice à la puissance 0 vaut l'identité : \\(M^0 = I\\).</li>
+                        <li><strong>Définition d'une chaîne de Markov :</strong> L'état suivant ne dépend que de l'état actuel : \\\( P_{n+1} = P_n \\times M \\\).</li>
+                        <li><strong>Associativité :</strong> Le produit matriciel est associatif : \\\((A \\times B) \\times C = A \\times (B \\times C)\\\).</li>
+                        <li><strong>Convention :</strong> Toute matrice à la puissance 0 vaut l'identité : \\\(M^0 = I\\\).</li>
                     </ul>
                 </div>
 
@@ -606,19 +604,19 @@
                     
                     <div class="gauss-step" style="border-left-color: #27ae60;">
                         <strong>Étape 1 : Initialisation (rang n=0)</strong>
-                        <p>Vérifions si la propriété est vraie pour \\(n=0\\).</p>
+                        <p>Vérifions si la propriété est vraie pour \\\(n=0\\\).</p>
                         <ul>
-                            <li><strong>Membre de gauche (Réalité) :</strong> \\(P_0\\) est l'état initial par définition.</li>
-                            <li><strong>Membre de droite (Formule) :</strong> \\(P_0 \\times M^0 = P_0 \\times I = P_0\\).</li>
+                            <li><strong>Membre de gauche (Réalité) :</strong> \\\(P_0\\\) est l'état initial par définition.</li>
+                            <li><strong>Membre de droite (Formule) :</strong> \\\(P_0 \\times M^0 = P_0 \\times I = P_0\\\).</li>
                         </ul>
                         <p><em>Conclusion :</em> L'égalité est vérifiée au rang 0.</p>
                     </div>
 
                     <div class="iter-step">
                         <strong>Étape 2 : Hérédité</strong>
-                        <p>Supposons que la propriété soit vraie pour un entier \\(k \\geq 0\\) fixé. C'est notre <strong>Hypothèse de Récurrence (HR)</strong> :</p>
+                        <p>Supposons que la propriété soit vraie pour un entier \\\(k \\geq 0\\\) fixé. C'est notre <strong>Hypothèse de Récurrence (HR)</strong> :</p>
                         \\[ P_k = P_0 \\times M^k \\]
-                        <p>Nous devons démontrer qu'elle reste vraie au rang \\(k+1\\), c'est-à-dire arriver au résultat : \\( P_{k+1} = P_0 \\times M^{k+1} \\).</p>
+                        <p>Nous devons démontrer qu'elle reste vraie au rang \\\(k+1\\\), c'est-à-dire arriver au résultat : \\\( P_{k+1} = P_0 \\times M^{k+1} \\\).</p>
                         
                         <hr style="border:0; border-top:1px dashed #bbb; margin:15px 0;">
                         
@@ -627,13 +625,13 @@
                         <p>1. Partons de la définition fondamentale de la suite (relation de récurrence) :</p>
                         \\[ P_{k+1} = P_k \\times M \\]
                         
-                        <p>2. Remplaçons \\(P_k\\) en utilisant notre Hypothèse de Récurrence (HR) :</p>
+                        <p>2. Remplaçons \\\(P_k\\\) en utilisant notre Hypothèse de Récurrence (HR) :</p>
                         \\[ P_{k+1} = (P_0 \\times M^k) \\times M \\]
                         
                         <p>3. Utilisons l'<strong>associativité</strong> du produit matriciel pour déplacer les parenthèses (étape clé) :</p>
                         \\[ P_{k+1} = P_0 \\times (M^k \\times M) \\]
                         
-                        <p>4. Appliquons les règles de puissance sur les matrices (\\(A^n \\times A^1 = A^{n+1}\\)) :</p>
+                        <p>4. Appliquons les règles de puissance sur les matrices (\\\(M^k \\times M^1 = M^{k+1}\\\)) :</p>
                         \\[ P_{k+1} = P_0 \\times M^{k+1} \\]
                         
                         <p style="color:#27ae60; font-weight:bold;">CQFD : La propriété est héréditaire.</p>
@@ -642,8 +640,7 @@
 
                 <div class="didactic-section concl">
                     <span class="sec-title">4. Conclusion Générale</span>
-                    <p>La propriété étant vraie au rang 0 et héréditaire à partir de tout rang, elle est vraie pour tout entier naturel \\(n\\).</p>
-                    <p>Cette démonstration valide l'utilisation du calcul de puissance de matrice (souvent via diagonalisation \\(M=PDP^{-1}\\)) pour prédire l'avenir lointain du système sans itérer manuellement.</p>
+                    <p>La propriété étant vraie au rang 0 et héréditaire à partir de tout rang, elle est vraie pour tout entier naturel \\\(n\\\).</p>
                 </div>`;
             } else {
                 
@@ -673,52 +670,47 @@
                 }
 
                 html = `
-                <h2>5. Démonstration : Expression de \\( M^n \\) (Binôme)</h2>
+                <h2>5. Démonstration : Expression de \\\( M^n \\\) (Binôme)</h2>
                 
                 <div class="didactic-section strat">
                     <span class="sec-title">1. Contexte et Objectif</span>
-                    <p>Nous travaillons avec la matrice structurée \\( M = aI + bJ \\) où les valeurs générées sont :</p>
+                    <p>Nous travaillons avec la matrice structurée \\\( M = aI + bJ \\\) où les valeurs générées sont :</p>
                     <ul class="tool-list">
-                        <li>\\( a = ${a} \\)</li>
-                        <li>\\( b = ${b} \\)</li>
+                        <li>\\\( a = ${a} \\\)</li>
+                        <li>\\\( b = ${b} \\\)</li>
                     </ul>
-                    <p>L'objectif est d'établir l'expression exacte de la matrice \\( M^n \\) pour tout \\( n \\) (gardé littéral), en fonction de ces valeurs et des puissances de \\( J \\).</p>
+                    <p>L'objectif est d'établir l'expression exacte de la matrice \\\( M^n \\\) pour tout \\\( n \\\) (gardé littéral), en fonction de ces valeurs et des puissances de \\\( J \\\).</p>
                 </div>
 
                 <div class="didactic-section tools">
                     <span class="sec-title">2. Propriété de Nilpotence</span>
-                    <p>La matrice \\( J \\) est de taille \\( ${N} \\times ${N} \\). C'est une matrice de décalage (Shift).</p>
+                    <p>La matrice \\\( J \\\) est de taille \\\( ${N} \\times ${N} \\\). C'est une matrice de décalage (Shift).</p>
                     <div class="gauss-step">
                         <strong>Arrêt des puissances :</strong>
-                        <p>Les puissances de \\( J \\) s'annulent dès que l'exposant atteint la dimension de la matrice.</p>
+                        <p>Les puissances de \\\( J \\\) s'annulent dès que l'exposant atteint la dimension de la matrice.</p>
                         <p style="text-align:center; font-weight:bold; color:#c0392b; font-size:1.1em;">
-                            La valeur \\( k \\) pour laquelle \\( J^k = 0 \\) est \\( k = ${N} \\).
+                            La valeur \\\( k \\\) pour laquelle \\\( J^k = 0 \\\) est \\\( k = ${N} \\\).
                         </p>
-                        <p>Donc \\( J^{${N}} = 0 \\), \\( J^{${N+1}} = 0 \\), etc.</p>
+                        <p>Donc \\\( J^{${N}} = 0 \\\), \\\( J^{${N+1}} = 0 \\\), etc.</p>
                     </div>
                 </div>
 
                 <div class="didactic-section appli">
                     <span class="sec-title">3. Application de la Formule du Binôme</span>
-                    <p>Comme \\( I \\) et \\( J \\) commutent, nous appliquons Newton :</p>
+                    <p>Comme \\\( I \\\) et \\\( J \\\) commutent, nous appliquons Newton :</p>
                     \\[ M^n = (aI + bJ)^n = \\sum_{k=0}^{n} \\binom{n}{k} a^{n-k} b^k J^k \\]
-                    <p>Grâce à la nilpotence (\\( J^{${N}}=0 \\)), la somme infinie (si \\(n\\) est grand) s'arrête en réalité à l'indice \\( k = ${N-1} \\). L'expression devient exacte et finie :</p>
+                    <p>Grâce à la nilpotence (\\\( J^{${N}}=0 \\\)), la somme infinie (si \\\(n\\\) est grand) s'arrête en réalité à l'indice \\\( k = ${N-1} \\\). L'expression devient exacte et finie :</p>
                     
                     <div class="step-calc" style="padding:15px; border:2px solid #3498db;">
-                        <strong>Expression finale de \\( M^n \\) :</strong>
+                        <strong>Expression finale de \\\( M^n \\\) :</strong>
                         \\[ M^n = ${sumLatex} \\]
                     </div>
-                    <p>Cette formule est valide pour tout \\( n \\ge ${N-1} \\).</p>
+                    <p>Cette formule est valide pour tout \\\( n \\ge ${N-1} \\\).</p>
                 </div>
 
                 <div class="didactic-section concl">
                     <span class="sec-title">4. Interprétation</span>
-                    <p>Cette expression décompose l'évolution du système en une superposition de décalages pondérés :</p>
-                    <ul>
-                        <li>Le terme en \\( I \\) représente la probabilité de "rester sur place" partout.</li>
-                        <li>Le terme en \\( J \\) représente la diffusion vers l'état voisin immédiat.</li>
-                        <li>Le terme en \\( J^2 \\) (si existe) représente la diffusion à 2 sauts, etc.</li>
-                    </ul>
+                    <p>Cette expression décompose l'évolution du système en une superposition de décalages pondérés.</p>
                 </div>`;
             }
         }
@@ -728,28 +720,36 @@
         MathJax.typesetPromise();
     }
 
-    // --- MOTEUR DE CALCUL GAUSS ---
+    // --- MOTEUR DE CALCUL GAUSS (Logique de Pivot sur les colonnes implicites) ---
     function solveLinearSystemWithSteps(matrix) {
         const n = matrix.length;
         let steps = [];
 
+        // On construit le système (M - I)^T
+        // A contient les lignes du système à résoudre.
+        // Puisqu'on veut pi * (M-I) = 0, on transpose pour utiliser un solver Ax=0 classique.
+        // La ligne j de A correspond donc à la colonne j de (M-I).
         let A = [];
         let B = new Array(n).fill(0);
 
         for (let j = 0; j < n; j++) { 
             let row = [];
             for (let i = 0; i < n; i++) {
+                // Construction de (M-I)^T :
+                // La variable i parcourt les états (les inconnues pi_i)
+                // L'équation j parcourt les colonnes de M.
                 let val = (i === j) ? matrix[i][j] - 1 : matrix[i][j];
                 row.push(val);
             }
             A.push(row);
         }
 
+        // Remplacement de la dernière équation par la condition de normalisation : Somme pi_i = 1
         A[n - 1] = new Array(n).fill(1);
         B[n - 1] = 1;
 
         steps.push({
-            title: "Mise en place de la matrice augmentée [A | B]",
+            title: "Mise en place de la matrice transposée [ (M-I)^T | 0 ]",
             latex: matrixToLatex(A, B)
         });
 
@@ -811,6 +811,7 @@
     function multiplyVectorMatrix(v, m) {
         let res = new Array(m.length).fill(0);
         for (let j = 0; j < m.length; j++) {
+            // Produit vectoriel : Somme sur i de v[i] * M[i][j]
             for (let i = 0; i < m.length; i++) res[j] += v[i] * m[i][j];
         }
         return res.map(x => parseFloat(x.toFixed(4)));
@@ -821,5 +822,4 @@
     window.onload = initExercise;
 </script>
 </body>
-
 </html>
